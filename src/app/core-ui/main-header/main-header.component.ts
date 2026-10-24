@@ -146,6 +146,7 @@ export class MainHeaderComponent implements OnDestroy {
   isShowIssuePanel = this.layoutService.isShowIssuePanel;
   isShowNotes = this.layoutService.isShowNotes;
   isShowScheduleDayPanel = this.layoutService.isShowScheduleDayPanel;
+  isShowAiPanel = this.layoutService.isShowAiPanel;
 
   /**
    * Which right-panel content is open, as one comparable key.
@@ -169,6 +170,9 @@ export class MainHeaderComponent implements OnDestroy {
     }
     if (this.isShowScheduleDayPanel()) {
       return 'SCHEDULE';
+    }
+    if (this.isShowAiPanel()) {
+      return 'AI';
     }
     if (this.layoutService.isShowPluginPanel()) {
       return `PLUGIN:${this.layoutService.activePluginId()}`;

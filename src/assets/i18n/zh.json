@@ -110,6 +110,55 @@
     }
   },
   "F": {
+    "AI": {
+      "TITLE": "AI 助手",
+      "MENU": {
+        "BREAKDOWN": "AI 拆解（微习惯）"
+      },
+      "CTX": {
+        "TODAY": "今天还剩 {{nr}} 项",
+        "OVERDUE": "{{nr}} 项已逾期"
+      },
+      "SETTINGS": {
+        "TITLE": "AI 设置",
+        "BASE_URL": "Base URL（OpenAI 兼容）",
+        "MODEL": "模型",
+        "API_KEY": "API Key",
+        "KEY_HINT": "仅保存在本设备，不会同步。",
+        "NOT_CONFIGURED": "连接一个 OpenAI 兼容接口（OpenAI、DeepSeek、通义千问、Kimi、OpenRouter、Ollama 等）即可使用 AI 功能。",
+        "TEST": "测试连接",
+        "TEST_OK": "连接正常。",
+        "SAVE": "保存"
+      },
+      "BREAKDOWN": {
+        "TITLE": "微习惯拆解",
+        "MIN": "分钟",
+        "ADD_STEP": "添加步骤",
+        "REMOVE_STEP": "删除步骤",
+        "REGENERATE": "重新生成",
+        "REFINE_PLACEHOLDER": "补充要求，例如“步骤再小一点”",
+        "ADOPT": "采用为 {{nr}} 个子任务",
+        "DISCARD": "放弃"
+      },
+      "CHAT": {
+        "PLACEHOLDER": "问问你的任务…（Enter 发送）",
+        "SEND": "发送",
+        "STOP": "停止",
+        "CLEAR": "清空对话",
+        "EMPTY": "可以让我帮你安排今天、按四象限整理任务或拆解任务。",
+        "SUGGEST_PLAN": "今天我应该先做什么？帮我安排一下今天。",
+        "SUGGEST_QUADRANT": "看看我今天的任务，给出四象限调整建议。"
+      },
+      "TOOL": {
+        "PENDING": "等待确认",
+        "REJECTED": "已拒绝",
+        "APPROVE": "执行",
+        "REJECT": "拒绝"
+      },
+      "S": {
+        "SUBTASKS_ADDED": "已添加 {{nr}} 个子任务"
+      }
+    },
     "ANDROID": {
       "FOREGROUND_SERVICE_START_FAILED_FOCUS": "Android 阻止了专注模式的常驻通知。计时器会继续在应用内运行，但后台提醒可能不可用。请检查通知权限以及电池和后台运行限制。",
       "FOREGROUND_SERVICE_START_FAILED_TRACKING": "Android 阻止了时间追踪的常驻通知。应用仍会记录时间，但后台恢复功能可能不可用。请检查通知权限以及电池和后台运行限制。",

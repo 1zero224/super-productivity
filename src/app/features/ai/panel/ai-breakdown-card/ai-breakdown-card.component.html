@@ -1,0 +1,124 @@
+@if (breakdown(); as b) {
+  <section class="card">
+    <header class="card-header">
+      <mat-icon class="card-icon">auto_awesome</mat-icon>
+      <div class="card-titles">
+        <div class="card-title">{{ T.F.AI.BREAKDOWN.TITLE | translate }}</div>
+        <div class="card-subtitle">{{ b.taskTitle }}</div>
+      </div>
+      <button
+        mat-icon-button
+        [matTooltip]="T.F.AI.BREAKDOWN.DISCARD | translate"
+        (click)="state.discardBreakdown()"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+    </header>
+
+    @if (b.status === 'loading') {
+      <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+      @if (!b.items.length) {
+        <div class="skeleton-list">
+          @for (i of [1, 2, 3, 4]; track i) {
+            <div
+              class="skeleton-row"
+              [style.animation-delay.ms]="i * 120"
+            ></div>
+          }
+        </div>
+      }
+    }
+
+    @if (b.status === 'error') {
+      <div class="callout callout--danger">
+        <p>{{ b.error }}</p>
+      </div>
+    }
+
+    @if (b.items.length) {
+      <ol
+        class="draft-list"
+        cdkDropList
+        [class.isStale]="b.status === 'loading'"
+        (cdkDropListDropped)="onDrop($event)"
+      >
+        @for (item of b.items; track item.uid; let i = $index) {
+          <li
+            class="draft-item"
+            cdkDrag
+            [style.animation-delay.ms]="i * 60"
+          >
+            <mat-icon
+              class="drag-handle"
+              cdkDragHandle
+              >drag_indicator</mat-icon
+            >
+            <span class="step-nr">{{ i + 1 }}</span>
+            <input
+              class="title-input"
+              [value]="item.title"
+              (input)="onTitleInput(item.uid, $event)"
+            />
+            <input
+              class="min-input"
+              type="number"
+              min="0"
+              [value]="item.estimateMinutes ?? ''"
+              (input)="onMinutesInput(item.uid, $event)"
+            />
+            <span class="min-label">{{ T.F.AI.BREAKDOWN.MIN | translate }}</span>
+            <button
+              mat-icon-button
+              class="remove-btn"
+              [matTooltip]="T.F.AI.BREAKDOWN.REMOVE_STEP | translate"
+              (click)="state.removeDraftItem(item.uid)"
+            >
+              <mat-icon>remove_circle_outline</mat-icon>
+            </button>
+          </li>
+        }
+      </ol>
+      <div class="list-footer">
+        <button
+          mat-button
+          (click)="state.addDraftItem()"
+        >
+          <mat-icon>add</mat-icon>
+          {{ T.F.AI.BREAKDOWN.ADD_STEP | translate }}
+        </button>
+        <span class="total"
+          >Σ {{ totalMinutes() }} {{ T.F.AI.BREAKDOWN.MIN | translate }}</span
+        >
+      </div>
+    }
+
+    <div class="refine-row">
+      <input
+        class="refine-input"
+        [placeholder]="T.F.AI.BREAKDOWN.REFINE_PLACEHOLDER | translate"
+        [value]="refineText()"
+        (input)="onRefineInput($event)"
+        (keydown.enter)="regenerate()"
+      />
+      <button
+        mat-stroked-button
+        [disabled]="b.status === 'loading'"
+        (click)="regenerate()"
+      >
+        <mat-icon>refresh</mat-icon>
+        {{ T.F.AI.BREAKDOWN.REGENERATE | translate }}
+      </button>
+    </div>
+
+    <div class="actions">
+      <button
+        mat-flat-button
+        color="primary"
+        [disabled]="b.status !== 'ready' || !validCount() || state.isAdopting()"
+        (click)="state.adoptBreakdown()"
+      >
+        {{ T.F.AI.BREAKDOWN.ADOPT | translate: { nr: validCount() } }}
+      </button>
+    </div>
+  </section>
+}

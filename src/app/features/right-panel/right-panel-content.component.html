@@ -17,6 +17,10 @@
   @defer (prefetch on idle) {
     <schedule-day-panel [@slideInFromRight]></schedule-day-panel>
   }
+} @else if (panelContent() === 'AI_PANEL') {
+  @defer (on immediate) {
+    <ai-panel [@slideInFromRight]></ai-panel>
+  }
 } @else {
   @if (selectedTaskWithDelayForNone(); as task) {
     <!-- Render `on immediate`, not `on idle`: the task panel is the default and

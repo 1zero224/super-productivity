@@ -9,7 +9,13 @@ import {
   toggleShowNotes,
   toggleTaskViewCustomizerPanel,
 } from './layout.actions';
-import { toggleScheduleDayPanel, hideScheduleDayPanel } from './layout.actions';
+import {
+  toggleScheduleDayPanel,
+  hideScheduleDayPanel,
+  hideAiPanel,
+  showAiPanel,
+  toggleAiPanel,
+} from './layout.actions';
 import {
   Action,
   createFeatureSelector,
@@ -29,6 +35,7 @@ export interface LayoutState {
   isShowPluginPanel: boolean;
   activePluginId: string | null;
   isShowScheduleDayPanel: boolean;
+  isShowAiPanel: boolean;
 }
 
 export const INITIAL_LAYOUT_STATE: LayoutState = {
@@ -40,6 +47,7 @@ export const INITIAL_LAYOUT_STATE: LayoutState = {
   isShowPluginPanel: false,
   activePluginId: null,
   isShowScheduleDayPanel: false,
+  isShowAiPanel: false,
 };
 
 export const selectLayoutFeatureState =
@@ -85,6 +93,11 @@ export const selectIsShowScheduleDayPanel = createSelector(
   (state) => state.isShowScheduleDayPanel,
 );
 
+export const selectIsShowAiPanel = createSelector(
+  selectLayoutFeatureState,
+  (state) => state.isShowAiPanel,
+);
+
 const ALL_PANEL_CONTENT_HIDDEN: Partial<LayoutState> = {
   isShowNotes: false,
   isShowIssuePanel: false,
@@ -92,6 +105,7 @@ const ALL_PANEL_CONTENT_HIDDEN: Partial<LayoutState> = {
   isShowPluginPanel: false,
   activePluginId: null,
   isShowScheduleDayPanel: false,
+  isShowAiPanel: false,
 };
 
 const _reducer = createReducer<LayoutState>(
@@ -156,6 +170,20 @@ const _reducer = createReducer<LayoutState>(
     ...state,
     ...ALL_PANEL_CONTENT_HIDDEN,
     isShowScheduleDayPanel: false,
+  })),
+  on(showAiPanel, (state) => ({
+    ...state,
+    ...ALL_PANEL_CONTENT_HIDDEN,
+    isShowAiPanel: true,
+  })),
+  on(toggleAiPanel, (state) => ({
+    ...state,
+    ...ALL_PANEL_CONTENT_HIDDEN,
+    isShowAiPanel: !state.isShowAiPanel,
+  })),
+  on(hideAiPanel, (state) => ({
+    ...state,
+    isShowAiPanel: false,
   })),
 );
 

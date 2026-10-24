@@ -210,6 +210,18 @@
       <span class="key-i">{{ kb.taskAddSubTask }}</span>
     </button>
   }
+  @if (!task.parentId && !task.isDone) {
+    <button
+      class="e2e-ai-breakdown"
+      (click)="aiBreakdown()"
+      mat-menu-item
+    >
+      <span class="menuItemLeft">
+        <mat-icon>auto_awesome</mat-icon>
+        {{ T.F.AI.MENU.BREAKDOWN | translate }}
+      </span>
+    </button>
+  }
 
   <!-- Only show the duplicate command if it is a parent unfinished task -->
   @if (isAdvancedControls() && !task.parentId && !task.isDone) {

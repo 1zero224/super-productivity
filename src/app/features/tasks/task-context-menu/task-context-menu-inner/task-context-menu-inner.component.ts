@@ -11,6 +11,7 @@ import {
   computed,
   ElementRef,
   inject,
+  Injector,
   input,
   Input,
   OnDestroy,
@@ -145,6 +146,8 @@ export class TaskContextMenuInnerComponent implements AfterViewInit, OnDestroy {
   private readonly _pluginTaskContextMenuRegistry = inject(
     PluginTaskContextMenuRegistryService,
   );
+  // Resolves the lazily imported AI panel state on click
+  private readonly _injector = inject(Injector);
   private readonly _pluginTaskContextMenuTarget =
     signal<PluginTaskContextMenuTarget>('TASK');
 
@@ -568,6 +571,12 @@ export class TaskContextMenuInnerComponent implements AfterViewInit, OnDestroy {
 
   addSubTask(): void {
     this._addSubtaskInputService.requestOpen(this.task.parentId || this.task.id);
+  }
+
+  async aiBreakdown(): Promise<void> {
+    // Lazy-loaded: keeps the AI stack out of the initial bundle
+    const { AiPanelStateService } = await import('../../../ai/ai-panel-state.service');
+    this._injector.get(AiPanelStateService).startBreakdown(this.task.id);
   }
 
   async duplicate(): Promise<void> {

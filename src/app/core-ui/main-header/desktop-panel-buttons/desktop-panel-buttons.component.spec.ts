@@ -13,6 +13,8 @@ import { AppFeaturesConfig } from '../../../features/config/global-config.model'
  * nav's panels menu mirrors these three exactly (`mobile-bottom-nav.component`).
  * A button added here without a matching entry there is how a panel ends up
  * with no home below 600px.
+ *
+ * Exception: the AI assistant toggle is always shown and desktop-only.
  */
 describe('DesktopPanelButtonsComponent', () => {
   let appFeatures: ReturnType<typeof signal<AppFeaturesConfig>>;
@@ -82,7 +84,7 @@ describe('DesktopPanelButtonsComponent', () => {
         (fixture.nativeElement as HTMLElement).querySelectorAll('button.panel-btn'),
       ).map((b) => Array.from(b.classList).find((c) => c.startsWith('e2e-'))!);
 
-      expect(rendered).toEqual(expected);
+      expect(rendered).toEqual(['e2e-toggle-ai-panel', ...expected]);
     });
   });
 });

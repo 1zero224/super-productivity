@@ -98,6 +98,55 @@
     }
   },
   "F": {
+    "AI": {
+      "TITLE": "AI assistant",
+      "MENU": {
+        "BREAKDOWN": "AI breakdown (micro-habits)"
+      },
+      "CTX": {
+        "TODAY": "{{nr}} left today",
+        "OVERDUE": "{{nr}} overdue"
+      },
+      "SETTINGS": {
+        "TITLE": "AI settings",
+        "BASE_URL": "Base URL (OpenAI-compatible)",
+        "MODEL": "Model",
+        "API_KEY": "API key",
+        "KEY_HINT": "Stored only on this device, never synced.",
+        "NOT_CONFIGURED": "Connect an OpenAI-compatible endpoint (OpenAI, DeepSeek, Qwen, Kimi, OpenRouter, Ollama…) to use AI features.",
+        "TEST": "Test connection",
+        "TEST_OK": "Connection works.",
+        "SAVE": "Save"
+      },
+      "BREAKDOWN": {
+        "TITLE": "Micro-habit breakdown",
+        "MIN": "min",
+        "ADD_STEP": "Add step",
+        "REMOVE_STEP": "Remove step",
+        "REGENERATE": "Regenerate",
+        "REFINE_PLACEHOLDER": "Refine, e.g. \"smaller steps\"",
+        "ADOPT": "Add {{nr}} subtasks",
+        "DISCARD": "Discard"
+      },
+      "CHAT": {
+        "PLACEHOLDER": "Ask about your tasks… (Enter to send)",
+        "SEND": "Send",
+        "STOP": "Stop",
+        "CLEAR": "Clear conversation",
+        "EMPTY": "Ask me to plan your day, sort tasks into quadrants or break tasks down.",
+        "SUGGEST_PLAN": "What should I do first today, and how should I arrange my day?",
+        "SUGGEST_QUADRANT": "Review my today list and suggest Eisenhower quadrant adjustments."
+      },
+      "TOOL": {
+        "PENDING": "Waiting for approval",
+        "REJECTED": "Rejected",
+        "APPROVE": "Apply",
+        "REJECT": "Reject"
+      },
+      "S": {
+        "SUBTASKS_ADDED": "Added {{nr}} subtasks"
+      }
+    },
     "IOS_SHARE": {
       "SAVE": "Save",
       "DESTINATION": "Inbox",

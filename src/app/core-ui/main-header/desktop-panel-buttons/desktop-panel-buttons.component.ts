@@ -19,6 +19,16 @@ import { GlobalConfigService } from '../../../features/config/global-config.serv
   standalone: true,
   imports: [MatIconButton, MatIcon, MatTooltip, TranslatePipe],
   template: `
+    <button
+      class="panel-btn e2e-toggle-ai-panel"
+      [class.isActive]="isShowAiPanel()"
+      (click)="layoutService.toggleAiPanel()"
+      mat-icon-button
+      matTooltip="{{ T.F.AI.TITLE | translate }}"
+    >
+      <mat-icon>auto_awesome</mat-icon>
+    </button>
+
     @if (isScheduleDayPanelEnabled()) {
       <button
         class="panel-btn e2e-toggle-schedule-day-panel"
@@ -106,6 +116,7 @@ export class DesktopPanelButtonsComponent {
   readonly isShowScheduleDayPanel = input.required<boolean>();
   readonly isShowIssuePanel = input.required<boolean>();
   readonly isShowNotes = input.required<boolean>();
+  readonly isShowAiPanel = input<boolean>(false);
 
   readonly isIssuesPanelEnabled = computed(
     () => this._configService.appFeatures().isIssuesPanelEnabled,

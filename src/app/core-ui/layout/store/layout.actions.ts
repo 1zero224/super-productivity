@@ -42,3 +42,10 @@ export const togglePluginPanel = createAction(
 export const toggleScheduleDayPanel = createAction('[Layout] Toggle ScheduleDayPanel');
 
 export const hideScheduleDayPanel = createAction('[Layout] Hide ScheduleDayPanel');
+
+// AI Panel
+export const showAiPanel = createAction('[Layout] Show AiPanel');
+
+export const toggleAiPanel = createAction('[Layout] Toggle AiPanel');
+
+export const hideAiPanel = createAction('[Layout] Hide AiPanel');

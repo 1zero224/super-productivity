@@ -455,6 +455,7 @@ describe('MainHeaderComponent action placement', () => {
             isShowIssuePanel: signal(false),
             isShowNotes,
             isShowScheduleDayPanel: signal(false),
+            isShowAiPanel: signal(false),
             isShowPluginPanel: signal(false),
             activePluginId: signal(null),
           },

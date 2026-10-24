@@ -1,0 +1,67 @@
+<form
+  class="ai-settings"
+  (ngSubmit)="save()"
+>
+  <mat-form-field>
+    <mat-label>{{ T.F.AI.SETTINGS.BASE_URL | translate }}</mat-label>
+    <input
+      matInput
+      name="baseUrl"
+      placeholder="https://api.deepseek.com/v1"
+      [ngModel]="model().baseUrl"
+      (ngModelChange)="setField('baseUrl', $event)"
+    />
+  </mat-form-field>
+
+  <mat-form-field>
+    <mat-label>{{ T.F.AI.SETTINGS.MODEL | translate }}</mat-label>
+    <input
+      matInput
+      name="model"
+      placeholder="deepseek-chat"
+      [ngModel]="model().model"
+      (ngModelChange)="setField('model', $event)"
+    />
+  </mat-form-field>
+
+  <mat-form-field>
+    <mat-label>{{ T.F.AI.SETTINGS.API_KEY | translate }}</mat-label>
+    <input
+      matInput
+      name="apiKey"
+      type="password"
+      autocomplete="off"
+      [ngModel]="model().apiKey"
+      (ngModelChange)="setField('apiKey', $event)"
+    />
+    <mat-hint>{{ T.F.AI.SETTINGS.KEY_HINT | translate }}</mat-hint>
+  </mat-form-field>
+
+  @if (testState() === 'ok') {
+    <div class="callout callout--success">
+      <p>{{ T.F.AI.SETTINGS.TEST_OK | translate }}</p>
+    </div>
+  } @else if (testState() === 'fail') {
+    <div class="callout callout--danger">
+      <p>{{ testError() }}</p>
+    </div>
+  }
+
+  <div class="actions">
+    <button
+      mat-stroked-button
+      type="button"
+      [disabled]="testState() === 'testing'"
+      (click)="test()"
+    >
+      {{ T.F.AI.SETTINGS.TEST | translate }}
+    </button>
+    <button
+      mat-flat-button
+      color="primary"
+      type="submit"
+    >
+      {{ T.F.AI.SETTINGS.SAVE | translate }}
+    </button>
+  </div>
+</form>
