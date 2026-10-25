@@ -15,6 +15,8 @@ import { IMPORTANT_TAG, URGENT_TAG } from '../../tag/tag.const';
 import { wrapUntrusted } from '../tools/ai-task-tools.service';
 import { AiGoalsService } from '../goals/ai-goals.service';
 import { AiMemoryService } from '../memory/ai-memory.service';
+import { TranslateService } from '@ngx-translate/core';
+import { buildAiLanguageRule } from '../prompts/ai-language.util';
 
 export interface AiContextChips {
   page: string;
@@ -50,6 +52,7 @@ export class AiContextService {
   private readonly _dateService = inject(DateService);
   private readonly _goals = inject(AiGoalsService);
   private readonly _memory = inject(AiMemoryService);
+  private readonly _translateService = inject(TranslateService);
 
   private readonly _url = toSignal(
     this._router.events.pipe(
@@ -90,6 +93,14 @@ export class AiContextService {
       overdueCount: this._overdue().length,
     };
   });
+
+  /** Rule that makes the AI write in the app's UI language. */
+  buildLanguageRule(isChat = false): string {
+    return buildAiLanguageRule(
+      this._translateService.getCurrentLang() || this._translateService.getFallbackLang(),
+      isChat,
+    );
+  }
 
   /** Plain-text context block appended to the system prompt. */
   buildContextBlock(focusTaskId?: string | null, query = ''): string {

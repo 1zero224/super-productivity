@@ -23,6 +23,7 @@ import {
 import { selectTaskEntities } from '../../tasks/store/task.selectors';
 import { Task } from '../../tasks/task.model';
 import { DateService } from '../../../core/date/date.service';
+import { AiContextService } from '../context/ai-context.service';
 import { isValidSplitTime } from '../../../util/is-valid-split-time';
 import { Log } from '../../../core/log';
 
@@ -135,6 +136,7 @@ export class AiReportService {
   private readonly _goals = inject(AiGoalsService);
   private readonly _memory = inject(AiMemoryService);
   private readonly _dateService = inject(DateService);
+  private readonly _context = inject(AiContextService);
   private readonly _db = new AiEntityStore<AiReport>('reports');
 
   private readonly _reports = signal<AiReport[]>([]);
@@ -187,7 +189,9 @@ export class AiReportService {
         messages: [
           {
             role: 'system',
-            content: type === 'daily' ? AI_DAILY_REPORT_PROMPT : AI_WEEKLY_REPORT_PROMPT,
+            content: `${
+              type === 'daily' ? AI_DAILY_REPORT_PROMPT : AI_WEEKLY_REPORT_PROMPT
+            }\n\n${this._context.buildLanguageRule()}`,
           },
           {
             role: 'user',

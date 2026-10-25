@@ -90,7 +90,7 @@ export class AiPanelStateService {
   private readonly _agent = new AiAgent({
     chat: (req) => this._client.chat(req),
     getSystemPrompt: () =>
-      `${AI_ASSISTANT_SYSTEM_PROMPT}\n\n## Current context\n${this._context.buildContextBlock(
+      `${AI_ASSISTANT_SYSTEM_PROMPT}\n- ${this._context.buildLanguageRule(true)}\n\n## Current context\n${this._context.buildContextBlock(
         this.breakdown()?.taskId,
         this._lastUserText(),
       )}`,
@@ -188,7 +188,10 @@ export class AiPanelStateService {
       ...(extraInstruction ? { extraInstruction } : {}),
     });
     const messages: AiMessage[] = [
-      { role: 'system', content: AI_MICRO_HABIT_BREAKDOWN_PROMPT },
+      {
+        role: 'system',
+        content: `${AI_MICRO_HABIT_BREAKDOWN_PROMPT}\n\n${this._context.buildLanguageRule()}`,
+      },
       { role: 'user', content: userContent },
     ];
 
