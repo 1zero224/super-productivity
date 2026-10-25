@@ -18,8 +18,15 @@ const SELF_UPDATING_CHANNELS: readonly DistChannel[] = [
   'linux-snap',
 ];
 
+// Personal fork: the check polls the upstream releases, which this build does
+// not follow. Disabled entirely (no auto check, no setting, no manual button).
+const IS_UPDATE_CHECK_DISABLED = true;
+
 /** Whether this build has no update channel of its own and should check for updates. */
 export const isUpdateCheckPossible = (): boolean => {
+  if (IS_UPDATE_CHECK_DISABLED) {
+    return false;
+  }
   if (!IS_ELECTRON) {
     // Mobile builds update via their stores; the web app updates via the
     // service worker (InitialPwaUpdateCheckService).
