@@ -132,7 +132,8 @@
         "SAVE": "保存",
         "AUTOMATION": {
           "TITLE": "定时报告",
-          "DAILY": "日报：今日建议",
+          "DAILY": "早间：今日建议",
+          "EVENING": "晚间：日报复盘",
           "WEEKLY": "周报：每周复盘",
           "TIME": "时间",
           "DAY": "星期",
@@ -187,11 +188,13 @@
       },
       "REPORT": {
         "DAILY": "今日建议",
+        "EVENING": "日报复盘",
         "WEEKLY": "每周复盘",
         "SUGGESTIONS": "建议的调整",
         "APPLY_SELECTED": "应用所选（{{nr}}）",
         "MEMORIES_SAVED": "已将 {{nr}} 条结论写入记忆",
         "GENERATE_DAILY": "立即生成今日建议",
+        "GENERATE_EVENING": "立即生成日报复盘",
         "GENERATE_WEEKLY": "立即生成周报",
         "GENERATING": "正在生成…",
         "EMPTY": "还没有报告。报告会按时自动生成，也可以现在手动生成。",

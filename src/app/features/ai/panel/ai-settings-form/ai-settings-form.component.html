@@ -62,6 +62,26 @@
 
     <div class="automation-row">
       <mat-slide-toggle
+        name="isEveningEnabled"
+        [ngModel]="model().automation.isEveningEnabled"
+        (ngModelChange)="setAutomation('isEveningEnabled', $event)"
+        >{{ T.F.AI.SETTINGS.AUTOMATION.EVENING | translate }}</mat-slide-toggle
+      >
+      <mat-form-field class="time-field">
+        <mat-label>{{ T.F.AI.SETTINGS.AUTOMATION.TIME | translate }}</mat-label>
+        <input
+          matInput
+          type="time"
+          name="eveningTime"
+          [disabled]="!model().automation.isEveningEnabled"
+          [ngModel]="model().automation.eveningTime"
+          (ngModelChange)="setAutomation('eveningTime', $event)"
+        />
+      </mat-form-field>
+    </div>
+
+    <div class="automation-row">
+      <mat-slide-toggle
         name="isWeeklyEnabled"
         [ngModel]="model().automation.isWeeklyEnabled"
         (ngModelChange)="setAutomation('isWeeklyEnabled', $event)"

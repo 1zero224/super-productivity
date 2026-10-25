@@ -77,6 +77,11 @@ const JOBS: AiScheduledJob[] = [
         : null,
   },
   {
+    type: 'evening',
+    dueKey: (cfg, today, now, last) =>
+      cfg.isEveningEnabled ? computeDailyDueKey(today, cfg.eveningTime, now, last) : null,
+  },
+  {
     type: 'daily',
     dueKey: (cfg, today, now, last) =>
       cfg.isDailyEnabled ? computeDailyDueKey(today, cfg.dailyTime, now, last) : null,

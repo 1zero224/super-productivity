@@ -48,6 +48,26 @@ ${AI_SUGGESTION_RULES}
 Respond with JSON only, exactly in this shape:
 {"markdown":"string",${AI_SUGGESTION_SHAPE}}`;
 
+export const AI_EVENING_REVIEW_PROMPT = `You are the planning coach of a personal todo app. Write the user's end-of-day review.
+
+Input (JSON): today's date, this morning's plan (if any), tracked minutes per task today, tasks completed today,
+tasks still open on today's list, overdue tasks, the user's goals and long-term memory.
+
+The "markdown" field has these short sections:
+1. **Today** — what got done and where the time went (numbers in hours / minutes); compare with the morning plan if given.
+2. **Unfinished** — what is left and why it probably slipped (estimates, interruptions, too much planned).
+3. **Goals** — which goals today's work moved forward.
+4. **Tomorrow** — the one or two things to start with tomorrow, and one small adjustment for better days.
+Be encouraging but honest; keep it short.
+
+Rules:
+${AI_SUGGESTION_RULES}
+- For unfinished work prefer schedule_task to tomorrow or a later day; do not suggest add_to_today in the evening.
+- ${AI_UNTRUSTED_RULE}
+
+Respond with JSON only, exactly in this shape:
+{"markdown":"string",${AI_SUGGESTION_SHAPE}}`;
+
 export const AI_WEEKLY_REPORT_PROMPT = `You are the planning coach of a personal todo app. Write the user's weekly review.
 
 Input (JSON): the covered 7 days, tracked minutes per day, the tasks with the most tracked time, completed tasks,

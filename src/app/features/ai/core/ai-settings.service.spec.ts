@@ -13,6 +13,8 @@ describe('normalizeAiSettings', () => {
       automation: {
         isDailyEnabled: false,
         dailyTime: '07:15',
+        isEveningEnabled: false,
+        eveningTime: 'late',
         isWeeklyEnabled: true,
         weeklyDay: 9,
         weeklyTime: '25:00',
@@ -22,6 +24,8 @@ describe('normalizeAiSettings', () => {
     expect(s.automation).toEqual({
       isDailyEnabled: false,
       dailyTime: '07:15',
+      isEveningEnabled: false,
+      eveningTime: DEFAULT_AI_AUTOMATION_SETTINGS.eveningTime,
       isWeeklyEnabled: true,
       weeklyDay: DEFAULT_AI_AUTOMATION_SETTINGS.weeklyDay,
       weeklyTime: DEFAULT_AI_AUTOMATION_SETTINGS.weeklyTime,

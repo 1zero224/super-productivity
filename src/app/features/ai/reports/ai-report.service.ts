@@ -18,6 +18,7 @@ import { AiGoalsService } from '../goals/ai-goals.service';
 import { AiMemoryKind, AiMemoryService } from '../memory/ai-memory.service';
 import {
   AI_DAILY_REPORT_PROMPT,
+  AI_EVENING_REVIEW_PROMPT,
   AI_WEEKLY_REPORT_PROMPT,
 } from '../prompts/ai-prompts.const';
 import { selectTaskEntities } from '../../tasks/store/task.selectors';
@@ -32,6 +33,13 @@ const MAX_SUGGESTIONS = 10;
 const MAX_WEEKLY_MEMORIES = 3;
 const MAX_STORED_REPORTS = 60;
 const MAX_REASON_CHARS = 200;
+const MAX_MORNING_PLAN_CHARS = 3000;
+
+const REPORT_PROMPTS: Record<AiReportType, string> = {
+  daily: AI_DAILY_REPORT_PROMPT,
+  evening: AI_EVENING_REVIEW_PROMPT,
+  weekly: AI_WEEKLY_REPORT_PROMPT,
+};
 
 export interface ParsedReport {
   markdown: string;
@@ -174,13 +182,7 @@ export class AiReportService {
     try {
       await Promise.all([this.load(), this._goals.load(), this._memory.load()]);
       const key = periodKey ?? this._dateService.todayStr();
-      const input =
-        type === 'daily'
-          ? await this._data.collectDaily(key)
-          : {
-              week: await this._data.collectWeekly(key),
-              openTasks: await this._tools.listTasks('all_undone', 60),
-            };
+      const input = await this._collectInput(type, key);
       const memoryQuery = this._goals
         .activeGoals()
         .map((g) => g.title)
@@ -189,9 +191,7 @@ export class AiReportService {
         messages: [
           {
             role: 'system',
-            content: `${
-              type === 'daily' ? AI_DAILY_REPORT_PROMPT : AI_WEEKLY_REPORT_PROMPT
-            }\n\n${this._context.buildLanguageRule()}`,
+            content: `${REPORT_PROMPTS[type]}\n\n${this._context.buildLanguageRule()}`,
           },
           {
             role: 'user',
@@ -296,6 +296,28 @@ export class AiReportService {
 
   hasReport(type: AiReportType, periodKey: string): boolean {
     return this._reports().some((r) => r.type === type && r.periodKey === periodKey);
+  }
+
+  private async _collectInput(type: AiReportType, key: string): Promise<object> {
+    switch (type) {
+      case 'daily':
+        return this._data.collectDaily(key);
+      case 'evening': {
+        const morning = this._reports().find(
+          (r) => r.type === 'daily' && r.periodKey === key,
+        );
+        return {
+          ...(await this._data.collectEvening(key)),
+          // The model's own earlier output, so the review can compare
+          morningPlan: morning ? morning.markdown.slice(0, MAX_MORNING_PLAN_CHARS) : null,
+        };
+      }
+      case 'weekly':
+        return {
+          week: await this._data.collectWeekly(key),
+          openTasks: await this._tools.listTasks('all_undone', 60),
+        };
+    }
   }
 
   private async _execute(s: AiSuggestion): Promise<void> {

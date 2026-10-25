@@ -1,4 +1,5 @@
-export type AiReportType = 'daily' | 'weekly';
+// daily = morning recommendation, evening = end-of-day review
+export type AiReportType = 'daily' | 'evening' | 'weekly';
 
 export type AiSuggestionTool = 'set_quadrant' | 'add_to_today' | 'schedule_task';
 export const AI_SUGGESTION_TOOLS: AiSuggestionTool[] = [
@@ -25,7 +26,7 @@ export interface AiSuggestion {
 export interface AiReport {
   id: string;
   type: AiReportType;
-  // daily: the logical day; weekly: the last day of the covered 7 days
+  // daily / evening: the logical day; weekly: the last day of the covered 7 days
   periodKey: string;
   created: number;
   markdown: string;

@@ -17,6 +17,12 @@ import { AiReport, AiSuggestion } from '../ai-report.model';
 import { AiReportService } from '../ai-report.service';
 import { SnackService } from '../../../../core/snack/snack.service';
 
+const REPORT_META: Record<AiReport['type'], { icon: string; label: string }> = {
+  daily: { icon: 'wb_twilight', label: T.F.AI.REPORT.DAILY },
+  evening: { icon: 'bedtime', label: T.F.AI.REPORT.EVENING },
+  weekly: { icon: 'insights', label: T.F.AI.REPORT.WEEKLY },
+};
+
 const SUGGESTION_ICONS: Record<AiSuggestion['tool'], string> = {
   set_quadrant: 'grid_view',
   add_to_today: 'wb_sunny',
@@ -60,6 +66,7 @@ export class AiReportCardComponent {
   protected readonly T = T;
   readonly report = input.required<AiReport>();
   readonly isCompact = input(false);
+  readonly meta = computed(() => REPORT_META[this.report().type]);
 
   readonly items = computed(() =>
     this.report().suggestions.map((s) => ({

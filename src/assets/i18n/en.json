@@ -120,7 +120,8 @@
         "SAVE": "Save",
         "AUTOMATION": {
           "TITLE": "Scheduled reports",
-          "DAILY": "Daily: today's recommendation",
+          "DAILY": "Morning: today's recommendation",
+          "EVENING": "Evening: daily review",
           "WEEKLY": "Weekly review",
           "TIME": "Time",
           "DAY": "Day",
@@ -175,11 +176,13 @@
       },
       "REPORT": {
         "DAILY": "Today's recommendation",
+        "EVENING": "Daily review",
         "WEEKLY": "Weekly review",
         "SUGGESTIONS": "Suggested changes",
         "APPLY_SELECTED": "Apply selected ({{nr}})",
         "MEMORIES_SAVED": "{{nr}} conclusions saved to memory",
         "GENERATE_DAILY": "Generate today's recommendation",
+        "GENERATE_EVENING": "Generate daily review",
         "GENERATE_WEEKLY": "Generate weekly review",
         "GENERATING": "Generating…",
         "EMPTY": "No reports yet. They are generated on schedule, or generate one now.",

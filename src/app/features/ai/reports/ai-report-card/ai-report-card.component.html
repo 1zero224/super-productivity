@@ -3,14 +3,9 @@
   [class.isUnread]="!report().isRead"
 >
   <header class="report-head">
-    <mat-icon class="report-icon">{{
-      report().type === 'daily' ? 'wb_twilight' : 'insights'
-    }}</mat-icon>
+    <mat-icon class="report-icon">{{ meta().icon }}</mat-icon>
     <div class="report-title">
-      <strong>{{
-        (report().type === 'daily' ? T.F.AI.REPORT.DAILY : T.F.AI.REPORT.WEEKLY)
-          | translate
-      }}</strong>
+      <strong>{{ meta().label | translate }}</strong>
       <span class="report-period">{{ report().periodKey }}</span>
     </div>
     @if (!isCompact()) {

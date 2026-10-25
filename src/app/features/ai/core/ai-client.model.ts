@@ -45,6 +45,9 @@ export interface AiAutomationSettings {
   isDailyEnabled: boolean;
   // Local time "HH:mm"
   dailyTime: string;
+  // End-of-day review
+  isEveningEnabled: boolean;
+  eveningTime: string;
   isWeeklyEnabled: boolean;
   // 0 = Sunday … 6 = Saturday
   weeklyDay: number;
@@ -63,6 +66,8 @@ export interface AiSettings {
 export const DEFAULT_AI_AUTOMATION_SETTINGS: AiAutomationSettings = {
   isDailyEnabled: true,
   dailyTime: '08:30',
+  isEveningEnabled: true,
+  eveningTime: '21:30',
   isWeeklyEnabled: true,
   weeklyDay: 0,
   weeklyTime: '20:00',

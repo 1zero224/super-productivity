@@ -10,6 +10,14 @@
   <button
     mat-stroked-button
     [disabled]="!isConfigured() || !!reportService.generating()"
+    (click)="generate('evening')"
+  >
+    <mat-icon>bedtime</mat-icon>
+    {{ T.F.AI.REPORT.GENERATE_EVENING | translate }}
+  </button>
+  <button
+    mat-stroked-button
+    [disabled]="!isConfigured() || !!reportService.generating()"
     (click)="generate('weekly')"
   >
     <mat-icon>insights</mat-icon>

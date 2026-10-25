@@ -30,6 +30,10 @@ export const normalizeAiSettings = (raw: Partial<AiSettings> | undefined): AiSet
       dailyTime: TIME_RE.test(a.dailyTime)
         ? a.dailyTime
         : DEFAULT_AI_AUTOMATION_SETTINGS.dailyTime,
+      isEveningEnabled: !!a.isEveningEnabled,
+      eveningTime: TIME_RE.test(a.eveningTime)
+        ? a.eveningTime
+        : DEFAULT_AI_AUTOMATION_SETTINGS.eveningTime,
       isWeeklyEnabled: !!a.isWeeklyEnabled,
       weeklyDay:
         Number.isInteger(a.weeklyDay) && a.weeklyDay >= 0 && a.weeklyDay <= 6

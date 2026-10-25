@@ -30,6 +30,14 @@ export interface AiDailyReportData {
   backlogTasks: AiTaskSummary[];
 }
 
+export interface AiEveningReportData {
+  today: string;
+  now: string;
+  trackedToday: AiWeeklyReportData;
+  openTodayTasks: AiTaskSummary[];
+  overdueTasks: AiTaskSummary[];
+}
+
 export interface AiWeekTaskTime {
   id: string;
   title: string;
@@ -146,7 +154,26 @@ export class AiReportDataService {
     };
   }
 
-  async collectWeekly(toDay: string): Promise<AiWeeklyReportData> {
+  async collectEvening(today: string): Promise<AiEveningReportData> {
+    const [trackedToday, todayTasks, overdueTasks] = await Promise.all([
+      this._aggregate([today]),
+      this._tools.listTasks('today', MAX_TODAY),
+      this._tools.listTasks('overdue', MAX_OVERDUE),
+    ]);
+    return {
+      today,
+      now: new Date().toLocaleString(),
+      trackedToday,
+      openTodayTasks: todayTasks.filter((t) => !t.isDone),
+      overdueTasks,
+    };
+  }
+
+  collectWeekly(toDay: string): Promise<AiWeeklyReportData> {
+    return this._aggregate(getWeekDays(toDay));
+  }
+
+  private async _aggregate(days: string[]): Promise<AiWeeklyReportData> {
     const [tasks, projects] = await Promise.all([
       firstValueFrom(this._store.select(selectAllTasks)),
       firstValueFrom(this._store.select(selectAllProjects)),
@@ -161,6 +188,6 @@ export class AiReportDataService {
       AiLog.err('AiReportDataService: failed to load archive', e);
     }
     const projectTitles = Object.fromEntries(projects.map((p) => [p.id, p.title]));
-    return aggregateWeek([...tasks, ...archived], getWeekDays(toDay), projectTitles);
+    return aggregateWeek([...tasks, ...archived], days, projectTitles);
   }
 }
