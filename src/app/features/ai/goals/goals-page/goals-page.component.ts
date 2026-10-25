@@ -132,7 +132,11 @@ export class GoalsPageComponent implements OnInit {
   private _openDialog(data: DialogGoalEditData): Promise<AiGoalDraft | undefined> {
     return new Promise((resolve) =>
       this._dialog
-        .open(DialogGoalEditComponent, { data, restoreFocus: true })
+        .open(DialogGoalEditComponent, {
+          data,
+          restoreFocus: true,
+          autoFocus: 'first-tabbable',
+        })
         .afterClosed()
         .subscribe((res: AiGoalDraft | undefined) => resolve(res)),
     );
