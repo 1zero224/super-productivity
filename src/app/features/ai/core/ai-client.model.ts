@@ -54,6 +54,8 @@ export interface AiAutomationSettings {
   weeklyTime: string;
   // Open the AI panel when a scheduled report is ready
   isAutoOpen: boolean;
+  // Give newly created tasks a quadrant tag automatically
+  isAutoQuadrant: boolean;
 }
 
 export interface AiSettings {
@@ -72,6 +74,7 @@ export const DEFAULT_AI_AUTOMATION_SETTINGS: AiAutomationSettings = {
   weeklyDay: 0,
   weeklyTime: '20:00',
   isAutoOpen: true,
+  isAutoQuadrant: true,
 };
 
 export const DEFAULT_AI_SETTINGS: AiSettings = {

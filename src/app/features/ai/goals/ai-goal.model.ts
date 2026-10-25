@@ -14,11 +14,26 @@ export interface AiGoal {
   projectIds: string[];
   tagIds: string[];
   status: AiGoalStatus;
+  // mid → long, short → mid; long goals have none
+  parentId: string | null;
+  // Concrete tasks serving this goal (short-term goals only)
+  taskIds: string[];
   created: number;
   updated: number;
 }
 
 export type AiGoalDraft = Pick<
   AiGoal,
-  'horizon' | 'title' | 'description' | 'targetDate' | 'projectIds' | 'tagIds' | 'status'
+  | 'horizon'
+  | 'title'
+  | 'description'
+  | 'targetDate'
+  | 'projectIds'
+  | 'tagIds'
+  | 'status'
+  | 'parentId'
 >;
+
+/** The horizon a parent goal must have, or null for long-term goals. */
+export const parentHorizonOf = (horizon: AiGoalHorizon): AiGoalHorizon | null =>
+  horizon === 'short' ? 'mid' : horizon === 'mid' ? 'long' : null;

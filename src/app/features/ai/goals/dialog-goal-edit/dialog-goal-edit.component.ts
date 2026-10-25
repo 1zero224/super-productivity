@@ -1,4 +1,10 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Store } from '@ngrx/store';
@@ -15,7 +21,8 @@ import { MatInput } from '@angular/material/input';
 import { MatOption, MatSelect } from '@angular/material/select';
 import { TranslatePipe } from '@ngx-translate/core';
 import { T } from '../../../../t.const';
-import { AiGoal, AiGoalDraft, AiGoalHorizon } from '../ai-goal.model';
+import { AiGoal, AiGoalDraft, AiGoalHorizon, parentHorizonOf } from '../ai-goal.model';
+import { AiGoalsService } from '../ai-goals.service';
 import { selectAllProjects } from '../../../project/store/project.selectors';
 import { selectAllTagsWithoutMyDay } from '../../../tag/store/tag.reducer';
 import { GOAL_HORIZON_LABELS, GOAL_STATUS_LABELS } from '../ai-goal.const';
@@ -23,6 +30,7 @@ import { GOAL_HORIZON_LABELS, GOAL_STATUS_LABELS } from '../ai-goal.const';
 export interface DialogGoalEditData {
   goal?: AiGoal;
   horizon?: AiGoalHorizon;
+  parentId?: string;
 }
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -50,6 +58,7 @@ export class DialogGoalEditComponent {
   private readonly _dialogRef = inject(MatDialogRef<DialogGoalEditComponent>);
   private readonly _data = inject<DialogGoalEditData>(MAT_DIALOG_DATA);
   private readonly _store = inject(Store);
+  private readonly _goalsService = inject(AiGoalsService);
 
   protected readonly T = T;
   readonly HORIZONS = Object.entries(GOAL_HORIZON_LABELS).map(([value, label]) => ({
@@ -76,10 +85,30 @@ export class DialogGoalEditComponent {
     projectIds: this._data.goal?.projectIds ?? [],
     tagIds: this._data.goal?.tagIds ?? [],
     status: this._data.goal?.status ?? 'active',
+    parentId: this._data.goal?.parentId ?? this._data.parentId ?? null,
+  });
+
+  readonly parentHorizon = computed(() => parentHorizonOf(this.model().horizon));
+  // Active goals one horizon up (plus the current parent, even if not active)
+  readonly parentOptions = computed(() => {
+    const horizon = this.parentHorizon();
+    const current = this.model().parentId;
+    return horizon
+      ? this._goalsService
+          .goals()
+          .filter(
+            (g) => g.horizon === horizon && (g.status === 'active' || g.id === current),
+          )
+      : [];
   });
 
   set<K extends keyof AiGoalDraft>(key: K, value: AiGoalDraft[K]): void {
-    this.model.update((m) => ({ ...m, [key]: value }));
+    this.model.update((m) => ({
+      ...m,
+      [key]: value,
+      // A new horizon invalidates the parent
+      ...(key === 'horizon' && value !== m.horizon ? { parentId: null } : {}),
+    }));
   }
 
   setTargetDate(value: string): void {

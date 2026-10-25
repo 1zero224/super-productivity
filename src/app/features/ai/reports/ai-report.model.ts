@@ -1,11 +1,22 @@
-// daily = morning recommendation, evening = end-of-day review
-export type AiReportType = 'daily' | 'evening' | 'weekly';
+// daily = morning recommendation, evening = end-of-day review,
+// classify = one-click quadrant fill for tasks without a quadrant tag
+export type AiReportType = 'daily' | 'evening' | 'weekly' | 'classify';
 
-export type AiSuggestionTool = 'set_quadrant' | 'add_to_today' | 'schedule_task';
-export const AI_SUGGESTION_TOOLS: AiSuggestionTool[] = [
+export type AiSuggestionTool =
+  | 'set_quadrant'
+  | 'add_to_today'
+  | 'schedule_task'
+  | 'create_task'
+  | 'create_goal';
+export const AI_TASK_SUGGESTION_TOOLS: AiSuggestionTool[] = [
   'set_quadrant',
   'add_to_today',
   'schedule_task',
+];
+// Only the weekly review may propose new tasks / short-term goals
+export const AI_CREATE_SUGGESTION_TOOLS: AiSuggestionTool[] = [
+  'create_task',
+  'create_goal',
 ];
 
 export type AiSuggestionState = 'open' | 'applied' | 'failed';
@@ -15,8 +26,10 @@ export interface AiSuggestion {
   uid: string;
   tool: AiSuggestionTool;
   args: Record<string, unknown>;
-  // Task title at generation time, for display only
+  // Task (or new task / goal) title at generation time, for display only
   taskTitle: string;
+  // Extra display info, e.g. the quadrant and goal of a task to create
+  detail?: string;
   reason: string;
   state: AiSuggestionState;
   error?: string;

@@ -29,6 +29,7 @@ import {
 } from '../dialog-goal-edit/dialog-goal-edit.component';
 import { selectAllProjects } from '../../../project/store/project.selectors';
 import { selectAllTagsWithoutMyDay } from '../../../tag/store/tag.reducer';
+import { selectTaskEntities } from '../../../tasks/store/task.selectors';
 import { LayoutService } from '../../../../core-ui/layout/layout.service';
 import { AiPanelStateService } from '../../ai-panel-state.service';
 
@@ -40,6 +41,9 @@ const HORIZON_ICONS: Record<AiGoalHorizon, string> = {
 
 interface GoalCardView extends AiGoal {
   links: string[];
+  parentTitle: string | null;
+  tasks: { id: string; title: string; isDone: boolean }[];
+  doneCount: number;
 }
 
 /** Long / mid / short-term goals, stored locally and fed into the AI context. */
@@ -77,12 +81,18 @@ export class GoalsPageComponent implements OnInit {
     initialValue: [],
   });
 
+  private readonly _taskEntities = toSignal(this._store.select(selectTaskEntities), {
+    initialValue: {},
+  });
+
   readonly columns = computed(() => {
     const titles = new Map<string, string>([
       ...this._projects().map((p) => [p.id, p.title] as [string, string]),
       ...this._tags().map((t) => [t.id, `#${t.title}`] as [string, string]),
     ]);
     const goals = this._goalsService.goals();
+    const entities = this._taskEntities();
+    const goalTitles = new Map(goals.map((g) => [g.id, g.title]));
     return AI_GOAL_HORIZONS.map((horizon) => ({
       horizon,
       icon: HORIZON_ICONS[horizon],
@@ -91,14 +101,23 @@ export class GoalsPageComponent implements OnInit {
         .filter((g) => g.horizon === horizon)
         // Active first; done / dropped sink to the bottom
         .sort((a, b) => Number(a.status !== 'active') - Number(b.status !== 'active'))
-        .map(
-          (g): GoalCardView => ({
+        .map((g): GoalCardView => {
+          const tasks = g.taskIds
+            .map((id) => entities[id])
+            .filter((t) => !!t)
+            .map((t) => ({ id: t!.id, title: t!.title, isDone: t!.isDone }))
+            // Open tasks first
+            .sort((a, b) => Number(a.isDone) - Number(b.isDone));
+          return {
             ...g,
             links: [...g.projectIds, ...g.tagIds]
               .map((id) => titles.get(id))
               .filter((t): t is string => !!t),
-          }),
-        ),
+            parentTitle: (g.parentId && goalTitles.get(g.parentId)) || null,
+            tasks,
+            doneCount: tasks.filter((t) => t.isDone).length,
+          };
+        }),
     }));
   });
 
@@ -122,6 +141,10 @@ export class GoalsPageComponent implements OnInit {
 
   remove(goal: AiGoal): void {
     this._goalsService.remove(goal.id);
+  }
+
+  unlinkTask(taskId: string): void {
+    this._goalsService.unlinkTask(taskId);
   }
 
   askAi(): void {

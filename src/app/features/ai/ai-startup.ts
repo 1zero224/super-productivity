@@ -23,8 +23,14 @@ export const provideAiStartup = (): EnvironmentProviders =>
       .isAllDataLoadedInitially$.pipe(take(1))
       .subscribe(() =>
         window.setTimeout(() => {
-          import('./automation/ai-scheduler.service')
-            .then(({ AiSchedulerService }) => injector.get(AiSchedulerService).init())
+          Promise.all([
+            import('./automation/ai-scheduler.service'),
+            import('./quadrant/ai-auto-quadrant.service'),
+          ])
+            .then(([{ AiSchedulerService }, { AiAutoQuadrantService }]) => {
+              injector.get(AiSchedulerService).init();
+              injector.get(AiAutoQuadrantService).init();
+            })
             .catch((err) =>
               Log.err({ stage: 'init-ai-scheduler', error: (err as Error).message }),
             );

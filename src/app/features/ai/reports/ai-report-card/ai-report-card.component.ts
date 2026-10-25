@@ -16,30 +16,46 @@ import { T } from '../../../../t.const';
 import { AiReport, AiSuggestion } from '../ai-report.model';
 import { AiReportService } from '../ai-report.service';
 import { SnackService } from '../../../../core/snack/snack.service';
+import { AiQuadrant, quadrantFromFlags } from '../../quadrant/ai-quadrant.util';
 
 const REPORT_META: Record<AiReport['type'], { icon: string; label: string }> = {
   daily: { icon: 'wb_twilight', label: T.F.AI.REPORT.DAILY },
   evening: { icon: 'bedtime', label: T.F.AI.REPORT.EVENING },
   weekly: { icon: 'insights', label: T.F.AI.REPORT.WEEKLY },
+  classify: { icon: 'grid_view', label: T.F.AI.REPORT.CLASSIFY },
 };
 
 const SUGGESTION_ICONS: Record<AiSuggestion['tool'], string> = {
   set_quadrant: 'grid_view',
   add_to_today: 'wb_sunny',
   schedule_task: 'event',
+  create_task: 'add_task',
+  create_goal: 'flag',
 };
 
-export const describeSuggestion = (s: AiSuggestion): string => {
+export const QUADRANT_LABEL_KEYS: Record<AiQuadrant, string> = {
+  q1: T.F.AI.QUADRANT.Q1,
+  q2: T.F.AI.QUADRANT.Q2,
+  q3: T.F.AI.QUADRANT.Q3,
+  q4: T.F.AI.QUADRANT.Q4,
+};
+
+/** What a suggestion changes: a translation key, or plain text. */
+export const describeSuggestion = (s: AiSuggestion): { key?: string; text?: string } => {
   switch (s.tool) {
     case 'set_quadrant':
-      return [
-        s.args.important ? '★ important' : 'not important',
-        s.args.urgent ? '⚡ urgent' : 'not urgent',
-      ].join(' · ');
+      return {
+        key: QUADRANT_LABEL_KEYS[
+          quadrantFromFlags(s.args.important === true, s.args.urgent === true)
+        ],
+      };
     case 'add_to_today':
-      return '→ today';
+      return { key: T.F.AI.REPORT.TO_TODAY };
     case 'schedule_task':
-      return `→ ${s.args.day}${s.args.time ? ` ${s.args.time}` : ''}`;
+      return { text: `${s.args.day}${s.args.time ? ` ${s.args.time}` : ''}` };
+    case 'create_task':
+    case 'create_goal':
+      return { text: s.detail ?? '' };
   }
 };
 
@@ -73,6 +89,7 @@ export class AiReportCardComponent {
       ...s,
       icon: SUGGESTION_ICONS[s.tool],
       change: describeSuggestion(s),
+      isCreate: s.tool === 'create_task' || s.tool === 'create_goal',
     })),
   );
   // All still-open suggestions start ticked

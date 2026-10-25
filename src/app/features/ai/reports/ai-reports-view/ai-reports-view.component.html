@@ -1,3 +1,20 @@
+@if (unclassifiedCount() && isConfigured()) {
+  <div class="classify-banner">
+    <mat-icon>grid_view</mat-icon>
+    <span class="classify-text">{{
+      T.F.AI.REPORT.UNCLASSIFIED | translate: { nr: unclassifiedCount() }
+    }}</span>
+    <button
+      mat-flat-button
+      color="primary"
+      [disabled]="!!reportService.generating()"
+      (click)="generate('classify')"
+    >
+      {{ T.F.AI.REPORT.CLASSIFY_NOW | translate }}
+    </button>
+  </div>
+}
+
 <div class="toolbar">
   <button
     mat-stroked-button

@@ -1,7 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { nanoid } from 'nanoid';
 import { AiEntityStore } from '../core/ai-db';
-import { wrapUntrusted } from '../tools/ai-task-tools.service';
+import { wrapUntrusted } from '../core/ai-untrusted.util';
 import { Log } from '../../../core/log';
 
 export type AiMemoryKind = 'preference' | 'habit' | 'review' | 'fact';

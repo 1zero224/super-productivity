@@ -1,0 +1,50 @@
+.task-title {
+  margin-top: 0;
+  font-weight: var(--font-weight-semibold);
+}
+
+.goal-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-half);
+  min-width: min(420px, 80vw);
+}
+
+.goal-option {
+  display: flex;
+  align-items: center;
+  gap: var(--s);
+  padding: var(--s) var(--s2);
+  border: 1px solid var(--separator-color);
+  border-radius: var(--card-border-radius);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--transition-duration-s);
+
+  &:hover,
+  &.isCurrent {
+    border-color: var(--c-primary);
+  }
+
+  &.isCurrent .mat-icon {
+    color: var(--c-primary);
+  }
+}
+
+.goal-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.goal-parent {
+  font-size: var(--font-size-sm);
+  color: var(--text-color-muted);
+}
+
+.empty {
+  color: var(--text-color-muted);
+}

@@ -27,6 +27,10 @@ import { GlobalConfigService } from '../../config/global-config.service';
 import { DEFAULT_GLOBAL_CONFIG } from '../../config/default-global-config.const';
 import { getDateTimeFromClockString } from '../../../util/get-date-time-from-clock-string';
 import { isValidSplitTime } from '../../../util/is-valid-split-time';
+import { AiQuadrantService } from '../quadrant/ai-quadrant.service';
+import { AiGoalsService } from '../goals/ai-goals.service';
+import { wrapUntrusted } from '../core/ai-untrusted.util';
+import { AiQuadrant, computeQuadrantTagIds } from '../quadrant/ai-quadrant.util';
 
 const MAX_NOTES_CHARS = 1500;
 const DEFAULT_LIST_LIMIT = 30;
@@ -48,6 +52,8 @@ export interface AiTaskSummary {
   priority?: number;
   important: boolean;
   urgent: boolean;
+  // Explicit quadrant tag; null = not classified yet (parent tasks only)
+  quadrant: AiQuadrant | null;
   subTaskCount: number;
   // Wrapped: user-authored text, never instructions for the model
   notes?: string;
@@ -114,6 +120,8 @@ export interface AiRepeatTaskInput {
   startTime?: string;
   startDate?: string;
   estimateMinutes?: number;
+  isImportant?: boolean;
+  isUrgent?: boolean;
 }
 
 /** Builds the repeat cfg for `create_repeat_task` on top of the app defaults. */
@@ -158,23 +166,9 @@ export const buildRepeatCfg = (
   };
 };
 
-export const wrapUntrusted = (text: string): string =>
-  `<untrusted_user_content>${text}</untrusted_user_content>`;
+export { wrapUntrusted } from '../core/ai-untrusted.util';
 
-export const computeQuadrantTagIds = (
-  currentTagIds: string[],
-  isImportant: boolean,
-  isUrgent: boolean,
-): string[] => {
-  const base = currentTagIds.filter(
-    (id) => id !== IMPORTANT_TAG.id && id !== URGENT_TAG.id && id !== TODAY_TAG.id,
-  );
-  return [
-    ...base,
-    ...(isImportant ? [IMPORTANT_TAG.id] : []),
-    ...(isUrgent ? [URGENT_TAG.id] : []),
-  ];
-};
+export { computeQuadrantTagIds } from '../quadrant/ai-quadrant.util';
 
 /**
  * The task operations the AI may use. Every write goes through TaskService /
@@ -189,6 +183,8 @@ export class AiTaskToolsService {
   private readonly _dateService = inject(DateService);
   private readonly _taskRepeatCfgService = inject(TaskRepeatCfgService);
   private readonly _globalConfigService = inject(GlobalConfigService);
+  private readonly _quadrant = inject(AiQuadrantService);
+  private readonly _goals = inject(AiGoalsService);
 
   // ---------- reads ----------
 
@@ -214,6 +210,7 @@ export class AiTaskToolsService {
       ...(priority ? { priority } : {}),
       important: task.tagIds.includes(IMPORTANT_TAG.id),
       urgent: task.tagIds.includes(URGENT_TAG.id),
+      quadrant: task.parentId ? null : this._quadrant.quadrantOf(task.tagIds),
       subTaskCount: task.subTaskIds.length,
       ...(isIncludeNotes && task.notes?.trim()
         ? { notes: wrapUntrusted(task.notes.slice(0, MAX_NOTES_CHARS)) }
@@ -276,7 +273,13 @@ export class AiTaskToolsService {
     const contextTagIds =
       ctxType === WorkContextType.TAG && ctxId && ctxId !== TODAY_TAG.id ? [ctxId] : [];
     const additional: Partial<Task> = {
-      tagIds: computeQuadrantTagIds(contextTagIds, !!input.isImportant, !!input.isUrgent),
+      // Every new task gets a quadrant tag
+      tagIds: computeQuadrantTagIds(
+        contextTagIds,
+        !!input.isImportant,
+        !!input.isUrgent,
+        this._quadrant.ensureTags(),
+      ),
       ...(input.notes ? { notes: input.notes } : {}),
       ...(input.estimateMinutes
         ? { timeEstimate: input.estimateMinutes * MS_PER_MIN }
@@ -360,7 +363,12 @@ export class AiTaskToolsService {
     }
     this._taskService.updateTags(
       task,
-      computeQuadrantTagIds(task.tagIds, isImportant, isUrgent),
+      computeQuadrantTagIds(
+        task.tagIds,
+        isImportant,
+        isUrgent,
+        this._quadrant.ensureTags(),
+      ),
     );
   }
 
@@ -416,7 +424,16 @@ export class AiTaskToolsService {
     const taskId = this.createTask({
       title: input.title,
       estimateMinutes: input.estimateMinutes,
+      isImportant: input.isImportant,
+      isUrgent: input.isUrgent,
     });
+    // Future occurrences inherit the quadrant from the cfg
+    const tagIds = computeQuadrantTagIds(
+      [],
+      !!input.isImportant,
+      !!input.isUrgent,
+      this._quadrant.ensureTags(),
+    );
     const projectId =
       this._workContextService.activeWorkContextType === WorkContextType.PROJECT
         ? (this._workContextService.activeWorkContextId ?? null)
@@ -424,7 +441,7 @@ export class AiTaskToolsService {
     const repeatCfgId = this._taskRepeatCfgService.addTaskRepeatCfgToTask(
       taskId,
       projectId,
-      { ...cfg, projectId },
+      { ...cfg, projectId, tagIds },
     );
     return { taskId, repeatCfgId };
   }
@@ -474,7 +491,8 @@ export class AiTaskToolsService {
       {
         name: 'create_task',
         kind: 'write',
-        description: 'Create a new parent task in the current list.',
+        description:
+          'Create a new parent task in the current list. Always decide its Eisenhower quadrant (isImportant / isUrgent).',
         parameters: {
           type: 'object',
           properties: {
@@ -484,19 +502,53 @@ export class AiTaskToolsService {
             isToday: { type: 'boolean', description: 'plan it for today' },
             isImportant: { type: 'boolean' },
             isUrgent: { type: 'boolean' },
+            goalId: {
+              type: 'string',
+              description: 'id of the active short-term goal this task serves (optional)',
+            },
           },
-          required: ['title'],
+          required: ['title', 'isImportant', 'isUrgent'],
         },
-        execute: async (args) => ({
-          id: this.createTask({
+        execute: async (args) => {
+          const goalId = typeof args.goalId === 'string' ? args.goalId : undefined;
+          if (goalId) {
+            this._assertShortGoal(goalId);
+          }
+          const id = this.createTask({
             title: requireString(args, 'title'),
             notes: typeof args.notes === 'string' ? args.notes : undefined,
             estimateMinutes: optionalMinutes(args.estimateMinutes),
             isToday: args.isToday === true,
             isImportant: args.isImportant === true,
             isUrgent: args.isUrgent === true,
-          }),
-        }),
+          });
+          if (goalId) {
+            await this._goals.linkTask(goalId, id);
+          }
+          return { id };
+        },
+      },
+      {
+        name: 'link_task_to_goal',
+        kind: 'write',
+        description:
+          'Link an existing parent task to the active short-term goal it serves (a task has at most one goal).',
+        parameters: {
+          type: 'object',
+          properties: { taskId: { type: 'string' }, goalId: { type: 'string' } },
+          required: ['taskId', 'goalId'],
+        },
+        execute: async (args) => {
+          const taskId = requireString(args, 'taskId');
+          const goalId = requireString(args, 'goalId');
+          const task = await this.getTask(taskId);
+          if (!task || task.parentId) {
+            throw new Error('Only existing parent tasks can be linked');
+          }
+          this._assertShortGoal(goalId);
+          await this._goals.linkTask(goalId, taskId);
+          return { ok: true };
+        },
       },
       {
         name: 'create_subtasks',
@@ -658,8 +710,10 @@ export class AiTaskToolsService {
             startDate: { type: 'string', description: 'YYYY-MM-DD, default today' },
             startTime: { type: 'string', description: 'HH:mm, optional' },
             estimateMinutes: { type: 'number' },
+            isImportant: { type: 'boolean' },
+            isUrgent: { type: 'boolean' },
           },
-          required: ['title', 'repeatCycle'],
+          required: ['title', 'repeatCycle', 'isImportant', 'isUrgent'],
         },
         execute: async (args) =>
           this.createRepeatTask({
@@ -675,9 +729,18 @@ export class AiTaskToolsService {
                 ? args.startTime.trim()
                 : undefined,
             estimateMinutes: optionalMinutes(args.estimateMinutes),
+            isImportant: args.isImportant === true,
+            isUrgent: args.isUrgent === true,
           }),
       },
     ];
+  }
+
+  private _assertShortGoal(goalId: string): void {
+    const goal = this._goals.get(goalId);
+    if (!goal || goal.horizon !== 'short' || goal.status !== 'active') {
+      throw new Error('goalId must be an active short-term goal');
+    }
   }
 
   private _todayStr(): string {

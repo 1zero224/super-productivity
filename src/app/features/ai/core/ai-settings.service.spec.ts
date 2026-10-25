@@ -19,6 +19,7 @@ describe('normalizeAiSettings', () => {
         weeklyDay: 9,
         weeklyTime: '25:00',
         isAutoOpen: false,
+        isAutoQuadrant: false,
       },
     });
     expect(s.automation).toEqual({
@@ -30,6 +31,7 @@ describe('normalizeAiSettings', () => {
       weeklyDay: DEFAULT_AI_AUTOMATION_SETTINGS.weeklyDay,
       weeklyTime: DEFAULT_AI_AUTOMATION_SETTINGS.weeklyTime,
       isAutoOpen: false,
+      isAutoQuadrant: false,
     });
   });
 });

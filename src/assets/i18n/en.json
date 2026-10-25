@@ -101,7 +101,8 @@
     "AI": {
       "TITLE": "AI assistant",
       "MENU": {
-        "BREAKDOWN": "AI breakdown (micro-habits)"
+        "BREAKDOWN": "AI breakdown (micro-habits)",
+        "LINK_GOAL": "Link to short-term goal…"
       },
       "CTX": {
         "TODAY": "{{nr}} left today",
@@ -133,7 +134,8 @@
           "WED": "Wednesday",
           "THU": "Thursday",
           "FRI": "Friday",
-          "SAT": "Saturday"
+          "SAT": "Saturday",
+          "AUTO_QUADRANT": "Give new tasks a quadrant tag automatically"
         }
       },
       "BREAKDOWN": {
@@ -189,7 +191,13 @@
         "S": {
           "APPLIED": "Applied {{nr}} suggestions",
           "APPLIED_WITH_ERRORS": "Applied {{nr}} suggestions, {{failed}} failed"
-        }
+        },
+        "CLASSIFY": "Quadrant fill",
+        "TO_TODAY": "today",
+        "NEW_TASK": "New task",
+        "NEW_GOAL": "New short-term goal",
+        "UNCLASSIFIED": "{{nr}} tasks have no quadrant tag yet",
+        "CLASSIFY_NOW": "Fill with AI"
       },
       "MEMORY": {
         "INTRO": "What the assistant remembers about you. It is used to personalize advice and stays on this device.",
@@ -223,7 +231,21 @@
         "F_STATUS": "Status",
         "F_TARGET_DATE": "Target date",
         "F_PROJECTS": "Linked projects",
-        "F_TAGS": "Linked tags"
+        "F_TAGS": "Linked tags",
+        "F_PARENT_LONG": "Long-term goal it serves",
+        "F_PARENT_MID": "Mid-term goal it serves",
+        "NO_PARENT": "None",
+        "TASKS_PROGRESS": "Tasks: {{done}} / {{total}} done",
+        "NO_TASKS": "No linked tasks yet — link one from a task’s context menu.",
+        "UNLINK_TASK": "Remove link",
+        "LINK_TITLE": "Link to a short-term goal",
+        "NO_SHORT_GOALS": "No active short-term goals yet."
+      },
+      "QUADRANT": {
+        "Q1": "Important & urgent",
+        "Q2": "Important, not urgent",
+        "Q3": "Urgent, not important",
+        "Q4": "Not important, not urgent"
       }
     },
     "IOS_SHARE": {

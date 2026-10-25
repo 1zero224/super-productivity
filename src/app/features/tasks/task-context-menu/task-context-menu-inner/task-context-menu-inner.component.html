@@ -221,6 +221,16 @@
         {{ T.F.AI.MENU.BREAKDOWN | translate }}
       </span>
     </button>
+    <button
+      class="e2e-ai-link-goal"
+      (click)="aiLinkGoal()"
+      mat-menu-item
+    >
+      <span class="menuItemLeft">
+        <mat-icon>flag</mat-icon>
+        {{ T.F.AI.MENU.LINK_GOAL | translate }}
+      </span>
+    </button>
   }
 
   <!-- Only show the duplicate command if it is a parent unfinished task -->

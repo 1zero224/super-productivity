@@ -11,6 +11,8 @@ import { TaskRepeatCfgService } from '../../task-repeat-cfg/task-repeat-cfg.serv
 import { GlobalConfigService } from '../../config/global-config.service';
 import { TaskReminderOptionId } from '../../tasks/task.model';
 import { PlannerActions } from '../../planner/store/planner.actions';
+import { AiQuadrantService } from '../quadrant/ai-quadrant.service';
+import { AiGoalsService } from '../goals/ai-goals.service';
 import { TaskService } from '../../tasks/task.service';
 import { WorkContextService } from '../../work-context/work-context.service';
 import { DateService } from '../../../core/date/date.service';
@@ -47,6 +49,8 @@ describe('AiTaskToolsService', () => {
   let store: MockStore;
   let taskService: jasmine.SpyObj<TaskService>;
   let taskRepeatCfgService: jasmine.SpyObj<TaskRepeatCfgService>;
+  let quadrantMap: Record<string, string>;
+  let goalsService: { get: jasmine.Spy; linkTask: jasmine.Spy };
   let workContext: {
     activeWorkContextType?: WorkContextType;
     activeWorkContextId?: string;
@@ -67,6 +71,19 @@ describe('AiTaskToolsService', () => {
       'scheduleTask',
     ]);
     taskService.add.and.returnValue('new-id');
+    quadrantMap = {};
+    goalsService = {
+      get: jasmine
+        .createSpy('get')
+        .and.callFake((id: string) =>
+          id === 'g-short'
+            ? { id, horizon: 'short', status: 'active' }
+            : id === 'g-mid'
+              ? { id, horizon: 'mid', status: 'active' }
+              : undefined,
+        ),
+      linkTask: jasmine.createSpy('linkTask').and.resolveTo(),
+    };
     taskRepeatCfgService = jasmine.createSpyObj<TaskRepeatCfgService>(
       'TaskRepeatCfgService',
       ['addTaskRepeatCfgToTask'],
@@ -97,6 +114,11 @@ describe('AiTaskToolsService', () => {
         { provide: WorkContextService, useValue: workContext },
         { provide: DateService, useValue: { todayStr: () => '2026-10-24' } },
         { provide: TaskRepeatCfgService, useValue: taskRepeatCfgService },
+        {
+          provide: AiQuadrantService,
+          useValue: { ensureTags: () => quadrantMap, quadrantOf: () => null },
+        },
+        { provide: AiGoalsService, useValue: goalsService },
         {
           provide: GlobalConfigService,
           useValue: {
@@ -226,6 +248,32 @@ describe('AiTaskToolsService', () => {
     expect(cfg.wednesday).toBe(true);
     expect(cfg.friday).toBe(false);
     expect(cfg.startTime).toBe('07:00');
+  });
+
+  it('writes the explicit quadrant tag next to the built-in flags', async () => {
+    quadrantMap = { q1: 'tQ1', q2: 'tQ2', q3: 'tQ3', q4: 'tQ4' };
+    service.createTask({ title: 'x', isImportant: false, isUrgent: false });
+    expect(taskService.add.calls.mostRecent().args[2]?.tagIds).toEqual(['tQ4']);
+    await service.setQuadrant('p', true, false);
+    expect(taskService.updateTags.calls.mostRecent().args[1]).toEqual([
+      'tagA',
+      IMPORTANT_TAG.id,
+      'tQ2',
+    ]);
+  });
+
+  it('links a created task to an active short-term goal only', async () => {
+    const tool = service.buildAgentTools().find((t) => t.name === 'create_task')!;
+    await tool.execute({
+      title: 'Read ch.1',
+      isImportant: true,
+      isUrgent: false,
+      goalId: 'g-short',
+    });
+    expect(goalsService.linkTask).toHaveBeenCalledWith('g-short', 'new-id');
+    await expectAsync(
+      tool.execute({ title: 'x', isImportant: true, isUrgent: false, goalId: 'g-mid' }),
+    ).toBeRejected();
   });
 });
 

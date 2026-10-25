@@ -16,6 +16,7 @@ import { AiReportService } from '../ai-report.service';
 import { AiReportType } from '../ai-report.model';
 import { AiReportCardComponent } from '../ai-report-card/ai-report-card.component';
 import { AiSettingsService } from '../../core/ai-settings.service';
+import { AiQuadrantService } from '../../quadrant/ai-quadrant.service';
 
 const MARK_READ_DELAY_MS = 1500;
 
@@ -30,11 +31,13 @@ const MARK_READ_DELAY_MS = 1500;
 export class AiReportsViewComponent implements OnInit {
   readonly reportService = inject(AiReportService);
   private readonly _settingsService = inject(AiSettingsService);
+  private readonly _quadrant = inject(AiQuadrantService);
 
   protected readonly T = T;
   readonly limit = input<number | null>(null);
   readonly isCompact = input(false);
   readonly isConfigured = this._settingsService.isConfigured;
+  readonly unclassifiedCount = computed(() => this._quadrant.unclassifiedTasks().length);
 
   readonly shownReports = computed(() => {
     const all = this.reportService.reports();

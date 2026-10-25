@@ -71,6 +71,27 @@
       </mat-form-field>
     </div>
 
+    @if (parentHorizon()) {
+      <mat-form-field>
+        <mat-label>{{
+          (parentHorizon() === 'long'
+            ? T.F.AI.GOALS.F_PARENT_LONG
+            : T.F.AI.GOALS.F_PARENT_MID
+          ) | translate
+        }}</mat-label>
+        <mat-select
+          name="parentId"
+          [ngModel]="model().parentId"
+          (ngModelChange)="set('parentId', $event)"
+        >
+          <mat-option [value]="null">{{ T.F.AI.GOALS.NO_PARENT | translate }}</mat-option>
+          @for (g of parentOptions(); track g.id) {
+            <mat-option [value]="g.id">{{ g.title }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    }
+
     <mat-form-field>
       <mat-label>{{ T.F.AI.GOALS.F_PROJECTS | translate }}</mat-label>
       <mat-select

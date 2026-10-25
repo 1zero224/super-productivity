@@ -83,8 +83,47 @@
                   </button>
                 </mat-menu>
               </div>
+              @if (goal.parentTitle) {
+                <div class="goal-parent">
+                  <mat-icon>subdirectory_arrow_right</mat-icon>
+                  {{ goal.parentTitle }}
+                </div>
+              }
               @if (goal.description) {
                 <p class="goal-desc">{{ goal.description }}</p>
+              }
+              @if (goal.horizon === 'short') {
+                <div class="goal-tasks">
+                  <div class="goal-tasks-head">
+                    {{
+                      T.F.AI.GOALS.TASKS_PROGRESS
+                        | translate: { done: goal.doneCount, total: goal.tasks.length }
+                    }}
+                  </div>
+                  @for (task of goal.tasks; track task.id) {
+                    <div
+                      class="goal-task"
+                      [class.isDone]="task.isDone"
+                    >
+                      <mat-icon class="goal-task-icon">{{
+                        task.isDone ? 'check_circle' : 'radio_button_unchecked'
+                      }}</mat-icon>
+                      <span class="goal-task-title">{{ task.title }}</span>
+                      <button
+                        mat-icon-button
+                        class="goal-task-unlink"
+                        [matTooltip]="T.F.AI.GOALS.UNLINK_TASK | translate"
+                        (click)="unlinkTask(task.id)"
+                      >
+                        <mat-icon>link_off</mat-icon>
+                      </button>
+                    </div>
+                  } @empty {
+                    <div class="goal-tasks-empty">
+                      {{ T.F.AI.GOALS.NO_TASKS | translate }}
+                    </div>
+                  }
+                </div>
               }
               <div class="goal-meta">
                 @if (goal.status !== 'active') {

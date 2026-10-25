@@ -113,7 +113,8 @@
     "AI": {
       "TITLE": "AI 助手",
       "MENU": {
-        "BREAKDOWN": "AI 拆解（微习惯）"
+        "BREAKDOWN": "AI 拆解（微习惯）",
+        "LINK_GOAL": "关联到短期目标…"
       },
       "CTX": {
         "TODAY": "今天还剩 {{nr}} 项",
@@ -145,7 +146,8 @@
           "WED": "周三",
           "THU": "周四",
           "FRI": "周五",
-          "SAT": "周六"
+          "SAT": "周六",
+          "AUTO_QUADRANT": "新建任务自动打上四象限标签"
         }
       },
       "BREAKDOWN": {
@@ -201,7 +203,13 @@
         "S": {
           "APPLIED": "已应用 {{nr}} 条建议",
           "APPLIED_WITH_ERRORS": "已应用 {{nr}} 条建议，{{failed}} 条失败"
-        }
+        },
+        "CLASSIFY": "四象限补全",
+        "TO_TODAY": "今天",
+        "NEW_TASK": "新任务",
+        "NEW_GOAL": "新短期目标",
+        "UNCLASSIFIED": "有 {{nr}} 个任务还没有四象限标签",
+        "CLASSIFY_NOW": "AI 一键补全"
       },
       "MEMORY": {
         "INTRO": "助手记住的关于你的信息，用来让建议更贴合你。只保存在本设备。",
@@ -235,7 +243,21 @@
         "F_STATUS": "状态",
         "F_TARGET_DATE": "目标日期",
         "F_PROJECTS": "关联项目",
-        "F_TAGS": "关联标签"
+        "F_TAGS": "关联标签",
+        "F_PARENT_LONG": "服务的长期目标",
+        "F_PARENT_MID": "服务的中期目标",
+        "NO_PARENT": "无",
+        "TASKS_PROGRESS": "任务：已完成 {{done}} / {{total}}",
+        "NO_TASKS": "还没有关联任务——在任务右键菜单里关联。",
+        "UNLINK_TASK": "取消关联",
+        "LINK_TITLE": "关联到短期目标",
+        "NO_SHORT_GOALS": "还没有进行中的短期目标。"
+      },
+      "QUADRANT": {
+        "Q1": "重要且紧急",
+        "Q2": "重要不紧急",
+        "Q3": "不重要但紧急",
+        "Q4": "不重要不紧急"
       }
     },
     "ANDROID": {

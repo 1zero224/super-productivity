@@ -11,8 +11,8 @@ import {
 } from '../../tasks/store/task.selectors';
 import { WorkContextService } from '../../work-context/work-context.service';
 import { DateService } from '../../../core/date/date.service';
-import { IMPORTANT_TAG, URGENT_TAG } from '../../tag/tag.const';
-import { wrapUntrusted } from '../tools/ai-task-tools.service';
+import { AiQuadrantService } from '../quadrant/ai-quadrant.service';
+import { wrapUntrusted } from '../core/ai-untrusted.util';
 import { AiGoalsService } from '../goals/ai-goals.service';
 import { AiMemoryService } from '../memory/ai-memory.service';
 import { TranslateService } from '@ngx-translate/core';
@@ -53,6 +53,7 @@ export class AiContextService {
   private readonly _goals = inject(AiGoalsService);
   private readonly _memory = inject(AiMemoryService);
   private readonly _translateService = inject(TranslateService);
+  private readonly _quadrant = inject(AiQuadrantService);
 
   private readonly _url = toSignal(
     this._router.events.pipe(
@@ -130,19 +131,22 @@ export class AiContextService {
     if (todayTasks.length) {
       lines.push('Today list (undone):');
       for (const t of todayTasks) {
-        const q = [
-          t!.tagIds.includes(IMPORTANT_TAG.id) ? 'important' : '',
-          t!.tagIds.includes(URGENT_TAG.id) ? 'urgent' : '',
-        ]
-          .filter(Boolean)
-          .join('+');
+        const q = t!.parentId ? null : this._quadrant.quadrantOf(t!.tagIds);
         lines.push(
-          `- id=${t!.id} ${wrapUntrusted(t!.title)}${q ? ` [${q}]` : ''}` +
+          `- id=${t!.id} ${wrapUntrusted(t!.title)} [${q ?? 'unclassified'}]` +
             (t!.timeEstimate ? ` est=${Math.round(t!.timeEstimate / 60000)}m` : ''),
         );
       }
     }
-    lines.push('', this._goals.buildGoalsBlock());
+    lines.push(
+      '',
+      this._goals.buildGoalsBlock({
+        taskLookup: (id) =>
+          entities[id]
+            ? { title: entities[id]!.title, isDone: entities[id]!.isDone }
+            : undefined,
+      }),
+    );
     // Relevance: the latest user message plus whatever is in focus
     lines.push(
       '',

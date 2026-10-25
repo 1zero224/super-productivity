@@ -46,7 +46,17 @@
               <div class="suggestion-line">
                 <mat-icon class="tool-icon">{{ s.icon }}</mat-icon>
                 <span class="task-title">{{ s.taskTitle }}</span>
-                <span class="change">{{ s.change }}</span>
+                @if (s.isCreate) {
+                  <span class="new-badge">{{
+                    (s.tool === 'create_goal'
+                      ? T.F.AI.REPORT.NEW_GOAL
+                      : T.F.AI.REPORT.NEW_TASK
+                    ) | translate
+                  }}</span>
+                }
+                <span class="change"
+                  >→ {{ s.change.key ? (s.change.key | translate) : s.change.text }}</span
+                >
               </div>
               @if (s.reason) {
                 <div class="reason">{{ s.reason }}</div>

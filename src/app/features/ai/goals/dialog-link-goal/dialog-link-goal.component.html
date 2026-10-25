@@ -1,0 +1,51 @@
+<h2 mat-dialog-title>{{ T.F.AI.GOALS.LINK_TITLE | translate }}</h2>
+
+<mat-dialog-content>
+  <p class="task-title">{{ data.taskTitle }}</p>
+  <div class="goal-list">
+    @for (g of shortGoals(); track g.id) {
+      <button
+        class="goal-option"
+        [class.isCurrent]="g.id === currentGoalId()"
+        (click)="link(g.id)"
+      >
+        <mat-icon>{{
+          g.id === currentGoalId() ? 'radio_button_checked' : 'radio_button_unchecked'
+        }}</mat-icon>
+        <span class="goal-text">
+          <span class="goal-title">{{ g.title }}</span>
+          @if (g.parentId && parentTitles().get(g.parentId); as parent) {
+            <span class="goal-parent">↳ {{ parent }}</span>
+          }
+        </span>
+      </button>
+    } @empty {
+      <p class="empty">{{ T.F.AI.GOALS.NO_SHORT_GOALS | translate }}</p>
+    }
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  @if (!shortGoals().length) {
+    <button
+      mat-button
+      (click)="openGoals()"
+    >
+      {{ T.F.AI.GOALS.TITLE | translate }}
+    </button>
+  }
+  @if (currentGoalId()) {
+    <button
+      mat-button
+      (click)="unlink()"
+    >
+      {{ T.F.AI.GOALS.UNLINK_TASK | translate }}
+    </button>
+  }
+  <button
+    mat-button
+    mat-dialog-close
+  >
+    {{ T.G.CANCEL | translate }}
+  </button>
+</mat-dialog-actions>

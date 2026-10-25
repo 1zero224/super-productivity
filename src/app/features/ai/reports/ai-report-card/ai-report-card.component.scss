@@ -150,3 +150,12 @@
     transform: none;
   }
 }
+
+.new-badge {
+  padding: 0 var(--s-half);
+  border-radius: var(--s-half);
+  background: var(--c-primary);
+  color: var(--c-contrast);
+  font-size: 11px;
+  line-height: 18px;
+}

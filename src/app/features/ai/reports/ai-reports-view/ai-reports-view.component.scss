@@ -36,3 +36,20 @@
     transform: rotate(360deg);
   }
 }
+
+.classify-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--s);
+  padding: var(--s) var(--s2);
+  border-radius: var(--card-border-radius);
+  border: 1px solid var(--c-primary);
+
+  .mat-icon {
+    color: var(--c-primary);
+  }
+}
+
+.classify-text {
+  flex: 1;
+}

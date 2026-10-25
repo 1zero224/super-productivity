@@ -43,6 +43,7 @@ export const normalizeAiSettings = (raw: Partial<AiSettings> | undefined): AiSet
         ? a.weeklyTime
         : DEFAULT_AI_AUTOMATION_SETTINGS.weeklyTime,
       isAutoOpen: !!a.isAutoOpen,
+      isAutoQuadrant: !!a.isAutoQuadrant,
     },
   };
 };

@@ -579,6 +579,16 @@ export class TaskContextMenuInnerComponent implements AfterViewInit, OnDestroy {
     this._injector.get(AiPanelStateService).startBreakdown(this.task.id);
   }
 
+  async aiLinkGoal(): Promise<void> {
+    // Lazy-loaded: keeps the AI stack out of the initial bundle
+    const { DialogLinkGoalComponent } =
+      await import('../../../ai/goals/dialog-link-goal/dialog-link-goal.component');
+    this._matDialog.open(DialogLinkGoalComponent, {
+      data: { taskId: this.task.id, taskTitle: this.task.title },
+      restoreFocus: true,
+    });
+  }
+
   async duplicate(): Promise<void> {
     const taskWithSubtasks = this.task.subTaskIds.length
       ? await this._getTaskWithSubtasks()

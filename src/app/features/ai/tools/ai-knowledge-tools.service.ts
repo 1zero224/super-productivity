@@ -7,7 +7,7 @@ import {
   DEFAULT_RECALL_LIMIT,
 } from '../memory/ai-memory.service';
 import { AiGoalsService } from '../goals/ai-goals.service';
-import { wrapUntrusted } from './ai-task-tools.service';
+import { wrapUntrusted } from '../core/ai-untrusted.util';
 
 const MAX_RECALL_LIMIT = 30;
 
@@ -69,7 +69,8 @@ export class AiKnowledgeToolsService {
         name: 'list_goals',
         kind: 'read',
         description:
-          'List the user goals (long / mid / short term) including done and dropped ones.',
+          'List the user goals (long / mid / short term, with parentId) including done and dropped ones. ' +
+          'Short-term goals include the ids of their linked tasks.',
         parameters: { type: 'object', properties: {} },
         execute: async () => {
           await this._goals.load();
@@ -82,6 +83,8 @@ export class AiKnowledgeToolsService {
               ? { description: wrapUntrusted(g.description) }
               : {}),
             ...(g.targetDate ? { targetDate: g.targetDate } : {}),
+            ...(g.parentId ? { parentId: g.parentId } : {}),
+            ...(g.horizon === 'short' ? { taskIds: g.taskIds } : {}),
           }));
         },
       },

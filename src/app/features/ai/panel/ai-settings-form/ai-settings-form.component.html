@@ -119,6 +119,12 @@
       (ngModelChange)="setAutomation('isAutoOpen', $event)"
       >{{ T.F.AI.SETTINGS.AUTOMATION.AUTO_OPEN | translate }}</mat-slide-toggle
     >
+    <mat-slide-toggle
+      name="isAutoQuadrant"
+      [ngModel]="model().automation.isAutoQuadrant"
+      (ngModelChange)="setAutomation('isAutoQuadrant', $event)"
+      >{{ T.F.AI.SETTINGS.AUTOMATION.AUTO_QUADRANT | translate }}</mat-slide-toggle
+    >
     <p class="hint">{{ T.F.AI.SETTINGS.AUTOMATION.HINT | translate }}</p>
   </fieldset>
 
