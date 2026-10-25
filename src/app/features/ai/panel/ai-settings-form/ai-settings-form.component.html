@@ -37,6 +37,71 @@
     <mat-hint>{{ T.F.AI.SETTINGS.KEY_HINT | translate }}</mat-hint>
   </mat-form-field>
 
+  <fieldset class="automation">
+    <legend>{{ T.F.AI.SETTINGS.AUTOMATION.TITLE | translate }}</legend>
+
+    <div class="automation-row">
+      <mat-slide-toggle
+        name="isDailyEnabled"
+        [ngModel]="model().automation.isDailyEnabled"
+        (ngModelChange)="setAutomation('isDailyEnabled', $event)"
+        >{{ T.F.AI.SETTINGS.AUTOMATION.DAILY | translate }}</mat-slide-toggle
+      >
+      <mat-form-field class="time-field">
+        <mat-label>{{ T.F.AI.SETTINGS.AUTOMATION.TIME | translate }}</mat-label>
+        <input
+          matInput
+          type="time"
+          name="dailyTime"
+          [disabled]="!model().automation.isDailyEnabled"
+          [ngModel]="model().automation.dailyTime"
+          (ngModelChange)="setAutomation('dailyTime', $event)"
+        />
+      </mat-form-field>
+    </div>
+
+    <div class="automation-row">
+      <mat-slide-toggle
+        name="isWeeklyEnabled"
+        [ngModel]="model().automation.isWeeklyEnabled"
+        (ngModelChange)="setAutomation('isWeeklyEnabled', $event)"
+        >{{ T.F.AI.SETTINGS.AUTOMATION.WEEKLY | translate }}</mat-slide-toggle
+      >
+      <mat-form-field class="day-field">
+        <mat-label>{{ T.F.AI.SETTINGS.AUTOMATION.DAY | translate }}</mat-label>
+        <mat-select
+          name="weeklyDay"
+          [disabled]="!model().automation.isWeeklyEnabled"
+          [ngModel]="model().automation.weeklyDay"
+          (ngModelChange)="setAutomation('weeklyDay', $event)"
+        >
+          @for (d of WEEKDAYS; track d.value) {
+            <mat-option [value]="d.value">{{ d.label | translate }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field class="time-field">
+        <mat-label>{{ T.F.AI.SETTINGS.AUTOMATION.TIME | translate }}</mat-label>
+        <input
+          matInput
+          type="time"
+          name="weeklyTime"
+          [disabled]="!model().automation.isWeeklyEnabled"
+          [ngModel]="model().automation.weeklyTime"
+          (ngModelChange)="setAutomation('weeklyTime', $event)"
+        />
+      </mat-form-field>
+    </div>
+
+    <mat-slide-toggle
+      name="isAutoOpen"
+      [ngModel]="model().automation.isAutoOpen"
+      (ngModelChange)="setAutomation('isAutoOpen', $event)"
+      >{{ T.F.AI.SETTINGS.AUTOMATION.AUTO_OPEN | translate }}</mat-slide-toggle
+    >
+    <p class="hint">{{ T.F.AI.SETTINGS.AUTOMATION.HINT | translate }}</p>
+  </fieldset>
+
   @if (testState() === 'ok') {
     <div class="callout callout--success">
       <p>{{ T.F.AI.SETTINGS.TEST_OK | translate }}</p>

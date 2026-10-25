@@ -13,6 +13,8 @@ import { WorkContextService } from '../../work-context/work-context.service';
 import { DateService } from '../../../core/date/date.service';
 import { IMPORTANT_TAG, URGENT_TAG } from '../../tag/tag.const';
 import { wrapUntrusted } from '../tools/ai-task-tools.service';
+import { AiGoalsService } from '../goals/ai-goals.service';
+import { AiMemoryService } from '../memory/ai-memory.service';
 
 export interface AiContextChips {
   page: string;
@@ -28,6 +30,7 @@ const pageFromUrl = (url: string): string => {
   if (url.includes('/schedule')) return 'schedule';
   if (url.includes('/daily-summary')) return 'daily-summary';
   if (url.includes('/goals')) return 'goals';
+  if (/^\/ai(?:[/?#]|$)/.test(url)) return 'ai';
   if (url.includes('/tasks') || url.includes('/tag/') || url.includes('/project/')) {
     return 'tasks';
   }
@@ -45,6 +48,8 @@ export class AiContextService {
   private readonly _taskService = inject(TaskService);
   private readonly _workContextService = inject(WorkContextService);
   private readonly _dateService = inject(DateService);
+  private readonly _goals = inject(AiGoalsService);
+  private readonly _memory = inject(AiMemoryService);
 
   private readonly _url = toSignal(
     this._router.events.pipe(
@@ -87,7 +92,7 @@ export class AiContextService {
   });
 
   /** Plain-text context block appended to the system prompt. */
-  buildContextBlock(focusTaskId?: string | null): string {
+  buildContextBlock(focusTaskId?: string | null, query = ''): string {
     const chips = this.chips();
     const entities = this._entities();
     const todayTasks = this._todayIds()
@@ -126,6 +131,14 @@ export class AiContextService {
         );
       }
     }
+    lines.push('', this._goals.buildGoalsBlock());
+    // Relevance: the latest user message plus whatever is in focus
+    lines.push(
+      '',
+      this._memory.buildMemoryBlock(
+        [query, focusTask?.title ?? '', chips.contextTitle ?? ''].join(' '),
+      ),
+    );
     return lines.join('\n');
   }
 }

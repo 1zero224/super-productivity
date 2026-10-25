@@ -72,6 +72,12 @@ export class AiAgent {
     this._steeringQueue.length = 0;
   }
 
+  /** Replaces the transcript, e.g. to continue a stored conversation. */
+  load(messages: AiMessage[]): void {
+    this.reset();
+    this.messages.push(...messages);
+  }
+
   private _toolDefs(): AiToolDef[] {
     return this._cfg.tools.map((t) => ({
       type: 'function',

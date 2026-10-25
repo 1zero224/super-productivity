@@ -1,0 +1,38 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s);
+}
+
+.generating {
+  display: flex;
+  align-items: center;
+  gap: var(--s);
+  color: var(--text-color-muted);
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--separator-color);
+  border-top-color: var(--c-primary);
+  animation: ai-spin 0.8s linear infinite;
+}
+
+.empty {
+  text-align: center;
+  color: var(--text-color-muted);
+}
+
+@keyframes ai-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

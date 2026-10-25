@@ -2,6 +2,7 @@ import { inject, Injectable, signal } from '@angular/core';
 import { nanoid } from 'nanoid';
 import { AiClientService, AiRequestError } from './core/ai-client.service';
 import { AiTaskToolsService } from './tools/ai-task-tools.service';
+import { AiKnowledgeToolsService } from './tools/ai-knowledge-tools.service';
 import { AiContextService } from './context/ai-context.service';
 import { extractJsonObject } from './core/ai-stream.util';
 import { AiAgent } from './agent/ai-agent';
@@ -15,9 +16,17 @@ import { SnackService } from '../../core/snack/snack.service';
 import { T } from '../../t.const';
 import { Log } from '../../core/log';
 import { AiMessage } from './core/ai-client.model';
+import { AiChatItem } from './ai-chat.model';
+import { AiConversationService } from './conversations/ai-conversation.service';
+import { AiGoalsService } from './goals/ai-goals.service';
+import { AiMemoryService } from './memory/ai-memory.service';
+
+export type { AiChatItem, AiToolCallStatus } from './ai-chat.model';
 
 const AiLog = Log.withContext('ai');
 const MAX_DRAFT_ITEMS = 12;
+
+export type AiPanelView = 'chat' | 'reports';
 
 export interface AiDraftSubtask {
   uid: string;
@@ -32,23 +41,6 @@ export interface AiBreakdownState {
   items: AiDraftSubtask[];
   error?: string;
 }
-
-export type AiToolCallStatus = 'pending' | 'running' | 'done' | 'rejected' | 'error';
-
-export type AiChatItem =
-  | { id: string; kind: 'user'; text: string }
-  | { id: string; kind: 'assistant'; text: string; isStreaming: boolean }
-  | {
-      id: string;
-      kind: 'tool';
-      callId: string;
-      name: string;
-      args: Record<string, unknown>;
-      isWrite: boolean;
-      status: AiToolCallStatus;
-      resultText?: string;
-    }
-  | { id: string; kind: 'error'; text: string };
 
 export const parseBreakdownResponse = (text: string): AiDraftSubtask[] => {
   const json = extractJsonObject(text) as { subtasks?: unknown };
@@ -75,34 +67,92 @@ export const parseBreakdownResponse = (text: string): AiDraftSubtask[] => {
 export class AiPanelStateService {
   private readonly _client = inject(AiClientService);
   private readonly _tools = inject(AiTaskToolsService);
+  private readonly _knowledgeTools = inject(AiKnowledgeToolsService);
   private readonly _context = inject(AiContextService);
   private readonly _layoutService = inject(LayoutService);
   private readonly _snackService = inject(SnackService);
+  private readonly _conversations = inject(AiConversationService);
+  private readonly _goals = inject(AiGoalsService);
+  private readonly _memory = inject(AiMemoryService);
 
   readonly breakdown = signal<AiBreakdownState | null>(null);
   readonly chatItems = signal<AiChatItem[]>([]);
   readonly isChatRunning = signal(false);
   readonly isAdopting = signal(false);
+  readonly panelView = signal<AiPanelView>('chat');
+  readonly conversationId = signal<string>(nanoid());
 
   private _breakdownAbort: AbortController | null = null;
   private readonly _pendingConfirms = new Map<string, (isOk: boolean) => void>();
   private _streamingItemId: string | null = null;
+  private readonly _onRunDone: (() => void)[] = [];
 
   private readonly _agent = new AiAgent({
     chat: (req) => this._client.chat(req),
     getSystemPrompt: () =>
       `${AI_ASSISTANT_SYSTEM_PROMPT}\n\n## Current context\n${this._context.buildContextBlock(
         this.breakdown()?.taskId,
+        this._lastUserText(),
       )}`,
-    tools: this._tools.buildAgentTools(),
+    tools: [...this._tools.buildAgentTools(), ...this._knowledgeTools.buildAgentTools()],
     confirm: (req) => this._requestConfirm(req),
     onEvent: (ev) => this._onAgentEvent(ev),
   });
+
+  constructor() {
+    // Goals and memory feed the system prompt synchronously
+    this._goals.load();
+    this._memory.load();
+    this._conversations.load();
+  }
 
   // ---------- panel ----------
 
   open(): void {
     this._layoutService.showAiPanel();
+  }
+
+  showReports(): void {
+    this.panelView.set('reports');
+    this.open();
+  }
+
+  // ---------- conversations ----------
+
+  async newConversation(): Promise<void> {
+    await this._stopRun();
+    this._agent.reset();
+    this.chatItems.set([]);
+    this.conversationId.set(nanoid());
+  }
+
+  async openConversation(id: string): Promise<void> {
+    const conversation = this._conversations.get(id);
+    if (!conversation || id === this.conversationId()) {
+      return;
+    }
+    await this._stopRun();
+    this._agent.load(conversation.messages);
+    this.chatItems.set(conversation.items);
+    this.conversationId.set(id);
+    this.panelView.set('chat');
+  }
+
+  async deleteConversation(id: string): Promise<void> {
+    if (id === this.conversationId()) {
+      await this.newConversation();
+    }
+    await this._conversations.remove(id);
+  }
+
+  /** Aborts a running chat and waits until its last events (and save) are in. */
+  private _stopRun(): Promise<void> {
+    if (!this.isChatRunning()) {
+      return Promise.resolve();
+    }
+    const done = new Promise<void>((resolve) => this._onRunDone.push(resolve));
+    this.abortChat();
+    return done;
   }
 
   // ---------- breakdown ----------
@@ -143,26 +193,11 @@ export class AiPanelStateService {
     ];
 
     try {
-      let content: string;
-      try {
-        content = (
-          await this._client.chat({
-            messages,
-            isJsonResponse: true,
-            temperature: 0.4,
-            signal: ctrl.signal,
-          })
-        ).content;
-      } catch (e) {
-        // Some OpenAI-compatible providers reject response_format; retry plain.
-        if (e instanceof AiRequestError && e.status === 400) {
-          content = (
-            await this._client.chat({ messages, temperature: 0.4, signal: ctrl.signal })
-          ).content;
-        } else {
-          throw e;
-        }
-      }
+      const content = await this._client.chatJson({
+        messages,
+        temperature: 0.4,
+        signal: ctrl.signal,
+      });
       const items = parseBreakdownResponse(content);
       if (!items.length) {
         throw new Error('The AI returned no subtasks');
@@ -280,9 +315,7 @@ export class AiPanelStateService {
   }
 
   resetChat(): void {
-    this.abortChat();
-    this._agent.reset();
-    this.chatItems.set([]);
+    this.newConversation();
   }
 
   resolveToolCall(callId: string, isApproved: boolean): void {
@@ -353,8 +386,27 @@ export class AiPanelStateService {
       case 'done':
         this._streamingItemId = null;
         this.isChatRunning.set(false);
+        this._persistConversation();
+        this._onRunDone.splice(0).forEach((resolve) => resolve());
         break;
     }
+  }
+
+  private _persistConversation(): void {
+    this._conversations
+      .save(this.conversationId(), this.chatItems(), this._agent.messages)
+      .catch((e) => AiLog.err('Failed to save conversation', e));
+  }
+
+  private _lastUserText(): string {
+    const items = this.chatItems();
+    for (let i = items.length - 1; i >= 0; i--) {
+      const it = items[i];
+      if (it.kind === 'user') {
+        return it.text;
+      }
+    }
+    return '';
   }
 
   private _pushItem(item: AiChatItem): void {

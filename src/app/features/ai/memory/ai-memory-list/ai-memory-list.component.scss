@@ -1,0 +1,76 @@
+:host {
+  display: block;
+}
+
+.intro {
+  margin-top: 0;
+  color: var(--text-color-muted);
+}
+
+.add-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s);
+}
+
+.text-field {
+  flex: 1 1 240px;
+}
+
+.kind-field {
+  flex: 0 0 140px;
+}
+
+.memory-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-half);
+}
+
+.memory {
+  display: flex;
+  align-items: center;
+  gap: var(--s);
+  padding: var(--s-half) var(--s-half) var(--s-half) var(--s);
+  border-radius: var(--card-border-radius);
+  border: 1px solid var(--separator-color);
+  background: var(--card-bg);
+}
+
+.kind {
+  flex-shrink: 0;
+  padding: var(--s-quarter) var(--s);
+  border-radius: var(--s2);
+  font-size: var(--font-size-sm);
+  border: 1px solid currentColor;
+  color: var(--text-color-muted);
+
+  &.kind-preference,
+  &.kind-habit {
+    color: var(--c-primary);
+  }
+}
+
+.memory-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.memory-text {
+  overflow-wrap: break-word;
+}
+
+.memory-meta {
+  font-size: var(--font-size-sm);
+  color: var(--text-color-muted);
+}
+
+.empty {
+  text-align: center;
+  color: var(--text-color-muted);
+  padding: var(--s2) 0;
+}

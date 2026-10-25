@@ -1,0 +1,88 @@
+<div class="ai-page">
+  <aside class="history">
+    <button
+      mat-flat-button
+      color="primary"
+      class="new-chat-btn"
+      [disabled]="!isConfigured()"
+      (click)="newChat()"
+    >
+      <mat-icon>add_comment</mat-icon>
+      {{ T.F.AI.CHAT.NEW | translate }}
+    </button>
+    <h3 class="history-title">{{ T.F.AI.PAGE.HISTORY | translate }}</h3>
+    <ul class="history-list">
+      @for (c of conversationService.conversations(); track c.id) {
+        <li
+          class="history-item"
+          [class.isActive]="c.id === state.conversationId()"
+        >
+          <button
+            class="history-open"
+            (click)="openConversation(c.id)"
+          >
+            <span class="history-item-title">{{ c.title }}</span>
+            <span class="history-date">{{ c.updated | date: 'short' }}</span>
+          </button>
+          <button
+            mat-icon-button
+            class="history-delete"
+            [matTooltip]="T.G.DELETE | translate"
+            (click)="deleteConversation($event, c.id)"
+          >
+            <mat-icon>delete_outline</mat-icon>
+          </button>
+        </li>
+      } @empty {
+        <li class="history-empty">{{ T.F.AI.PAGE.NO_HISTORY | translate }}</li>
+      }
+    </ul>
+  </aside>
+
+  <main class="main">
+    <nav class="tabs">
+      @for (t of TABS; track t.id) {
+        <button
+          class="tab"
+          [class.isActive]="effectiveTab() === t.id"
+          (click)="tab.set(t.id)"
+        >
+          <mat-icon>{{ t.icon }}</mat-icon>
+          {{ t.label | translate }}
+          @if (t.id === 'reports' && unreadCount()) {
+            <span class="badge">{{ unreadCount() }}</span>
+          }
+        </button>
+      }
+    </nav>
+
+    @switch (effectiveTab()) {
+      @case ('chat') {
+        <ai-chat class="chat">
+          <ai-breakdown-card></ai-breakdown-card>
+        </ai-chat>
+      }
+      @case ('reports') {
+        <div class="scroll-pane">
+          <ai-reports-view></ai-reports-view>
+        </div>
+      }
+      @case ('memory') {
+        <div class="scroll-pane">
+          <ai-memory-list></ai-memory-list>
+        </div>
+      }
+      @case ('settings') {
+        <div class="scroll-pane">
+          @if (!isConfigured()) {
+            <div class="callout callout--info">
+              <mat-icon aria-hidden="true">key</mat-icon>
+              <p>{{ T.F.AI.SETTINGS.NOT_CONFIGURED | translate }}</p>
+            </div>
+          }
+          <ai-settings-form (saved)="tab.set('chat')"></ai-settings-form>
+        </div>
+      }
+    }
+  </main>
+</div>

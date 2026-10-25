@@ -1,0 +1,41 @@
+<div class="toolbar">
+  <button
+    mat-stroked-button
+    [disabled]="!isConfigured() || !!reportService.generating()"
+    (click)="generate('daily')"
+  >
+    <mat-icon>wb_twilight</mat-icon>
+    {{ T.F.AI.REPORT.GENERATE_DAILY | translate }}
+  </button>
+  <button
+    mat-stroked-button
+    [disabled]="!isConfigured() || !!reportService.generating()"
+    (click)="generate('weekly')"
+  >
+    <mat-icon>insights</mat-icon>
+    {{ T.F.AI.REPORT.GENERATE_WEEKLY | translate }}
+  </button>
+</div>
+
+@if (reportService.generating()) {
+  <div class="generating">
+    <span class="spinner"></span>
+    {{ T.F.AI.REPORT.GENERATING | translate }}
+  </div>
+}
+@if (reportService.lastError(); as error) {
+  <div class="callout callout--danger">
+    <p>{{ error }}</p>
+  </div>
+}
+
+@for (report of shownReports(); track report.id) {
+  <ai-report-card
+    [report]="report"
+    [isCompact]="isCompact()"
+  ></ai-report-card>
+} @empty {
+  @if (!reportService.generating()) {
+    <p class="empty">{{ T.F.AI.REPORT.EMPTY | translate }}</p>
+  }
+}

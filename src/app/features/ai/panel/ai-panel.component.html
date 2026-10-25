@@ -4,11 +4,18 @@
     <h2 class="panel-title">{{ T.F.AI.TITLE | translate }}</h2>
     <button
       mat-icon-button
-      [matTooltip]="T.F.AI.CHAT.CLEAR | translate"
+      [matTooltip]="T.F.AI.CHAT.NEW | translate"
       [disabled]="!state.chatItems().length"
-      (click)="state.resetChat()"
+      (click)="state.newConversation()"
     >
-      <mat-icon>delete_sweep</mat-icon>
+      <mat-icon>add_comment</mat-icon>
+    </button>
+    <button
+      mat-icon-button
+      [matTooltip]="T.F.AI.PAGE.OPEN_FULL | translate"
+      (click)="openFullPage()"
+    >
+      <mat-icon>open_in_full</mat-icon>
     </button>
     <button
       mat-icon-button
@@ -26,6 +33,28 @@
       <mat-icon>close</mat-icon>
     </button>
   </header>
+
+  <nav class="view-switch">
+    <button
+      class="view-btn"
+      [class.isActive]="state.panelView() === 'chat'"
+      (click)="state.panelView.set('chat')"
+    >
+      <mat-icon>forum</mat-icon>
+      {{ T.F.AI.PAGE.TAB_CHAT | translate }}
+    </button>
+    <button
+      class="view-btn"
+      [class.isActive]="state.panelView() === 'reports'"
+      (click)="state.panelView.set('reports')"
+    >
+      <mat-icon>tips_and_updates</mat-icon>
+      {{ T.F.AI.PAGE.TAB_REPORTS | translate }}
+      @if (unreadCount()) {
+        <span class="badge">{{ unreadCount() }}</span>
+      }
+    </button>
+  </nav>
 
   <div class="chips">
     <span class="chip">
@@ -45,6 +74,12 @@
         {{ T.F.AI.CTX.OVERDUE | translate: { nr: chips().overdueCount } }}
       </span>
     }
+    @if (activeGoalCount()) {
+      <span class="chip">
+        <mat-icon>flag</mat-icon>
+        {{ T.F.AI.CTX.GOALS | translate: { nr: activeGoalCount() } }}
+      </span>
+    }
     @if (state.breakdown()?.taskTitle || chips().selectedTaskTitle; as focus) {
       <span class="chip isFocus">
         <mat-icon>center_focus_strong</mat-icon>
@@ -53,159 +88,28 @@
     }
   </div>
 
-  <div
-    #scrollEl
-    class="scroll-area"
-  >
-    @if (isShowSettings()) {
-      <section class="settings-card">
-        @if (!isConfigured()) {
-          <div class="callout callout--info">
-            <mat-icon aria-hidden="true">key</mat-icon>
-            <p>{{ T.F.AI.SETTINGS.NOT_CONFIGURED | translate }}</p>
-          </div>
-        }
-        <ai-settings-form (saved)="isSettingsOpen.set(false)"></ai-settings-form>
-      </section>
-    }
-
-    <ai-breakdown-card></ai-breakdown-card>
-
-    @if (!chatView().length && !state.breakdown() && isConfigured()) {
-      <div class="empty">
-        <p class="empty-text">{{ T.F.AI.CHAT.EMPTY | translate }}</p>
-        <div class="suggestions">
-          <button
-            mat-stroked-button
-            (click)="askSuggestion(T.F.AI.CHAT.SUGGEST_PLAN)"
-          >
-            {{ T.F.AI.CHAT.SUGGEST_PLAN | translate }}
-          </button>
-          <button
-            mat-stroked-button
-            (click)="askSuggestion(T.F.AI.CHAT.SUGGEST_QUADRANT)"
-          >
-            {{ T.F.AI.CHAT.SUGGEST_QUADRANT | translate }}
-          </button>
-        </div>
-      </div>
-    }
-
-    <div class="messages">
-      @for (item of chatView(); track item.id) {
-        @switch (item.kind) {
-          @case ('user') {
-            <div class="msg isUser">{{ item.text }}</div>
-          }
-          @case ('assistant') {
-            <div
-              class="msg isAssistant"
-              [class.isStreaming]="item.isStreaming"
-            >
-              @if (item.text) {
-                <markdown [data]="item.text"></markdown>
-              } @else {
-                <span class="typing"><i></i><i></i><i></i></span>
-              }
-            </div>
-          }
-          @case ('tool') {
-            <div
-              class="tool-card"
-              [class]="'status-' + item.status"
-            >
-              <div class="tool-head">
-                <mat-icon class="tool-icon">{{
-                  item.isWrite ? 'edit_note' : 'search'
-                }}</mat-icon>
-                <code class="tool-name">{{ item.name }}</code>
-                <span class="tool-status">
-                  @switch (item.status) {
-                    @case ('pending') {
-                      {{ T.F.AI.TOOL.PENDING | translate }}
-                    }
-                    @case ('running') {
-                      <span class="spinner"></span>
-                    }
-                    @case ('done') {
-                      <mat-icon>check_circle</mat-icon>
-                    }
-                    @case ('rejected') {
-                      {{ T.F.AI.TOOL.REJECTED | translate }}
-                    }
-                    @case ('error') {
-                      <mat-icon>error_outline</mat-icon>
-                    }
-                  }
-                </span>
-              </div>
-              @if (item.isWrite && item.argLines.length) {
-                <ul class="tool-args">
-                  @for (line of item.argLines; track $index) {
-                    <li>{{ line }}</li>
-                  }
-                </ul>
-              }
-              @if (item.status === 'error' && item.resultText) {
-                <div class="tool-error">{{ item.resultText }}</div>
-              }
-              @if (item.status === 'pending') {
-                <div class="tool-actions">
-                  <button
-                    mat-button
-                    (click)="state.resolveToolCall(item.callId, false)"
-                  >
-                    {{ T.F.AI.TOOL.REJECT | translate }}
-                  </button>
-                  <button
-                    mat-flat-button
-                    color="primary"
-                    (click)="state.resolveToolCall(item.callId, true)"
-                  >
-                    {{ T.F.AI.TOOL.APPROVE | translate }}
-                  </button>
-                </div>
-              }
-            </div>
-          }
-          @case ('error') {
-            <div class="callout callout--danger">
-              <p>{{ item.text }}</p>
-            </div>
-          }
-        }
-      }
+  @if (state.panelView() === 'reports' && !isShowSettings()) {
+    <div class="scroll-area">
+      <ai-reports-view
+        [limit]="3"
+        [isCompact]="true"
+      ></ai-reports-view>
     </div>
-  </div>
+  } @else {
+    <ai-chat>
+      @if (isShowSettings()) {
+        <section class="settings-card">
+          @if (!isConfigured()) {
+            <div class="callout callout--info">
+              <mat-icon aria-hidden="true">key</mat-icon>
+              <p>{{ T.F.AI.SETTINGS.NOT_CONFIGURED | translate }}</p>
+            </div>
+          }
+          <ai-settings-form (saved)="isSettingsOpen.set(false)"></ai-settings-form>
+        </section>
+      }
 
-  <footer class="composer">
-    <textarea
-      class="composer-input"
-      rows="2"
-      [disabled]="!isConfigured()"
-      [placeholder]="T.F.AI.CHAT.PLACEHOLDER | translate"
-      [value]="draft()"
-      (input)="onDraftInput($event)"
-      (keydown)="onDraftKeydown($event)"
-    ></textarea>
-    @if (state.isChatRunning()) {
-      <button
-        mat-icon-button
-        class="composer-btn"
-        [matTooltip]="T.F.AI.CHAT.STOP | translate"
-        (click)="state.abortChat()"
-      >
-        <mat-icon>stop_circle</mat-icon>
-      </button>
-    }
-    <button
-      mat-icon-button
-      class="composer-btn isSend"
-      [disabled]="!draft().trim() || !isConfigured()"
-      [matTooltip]="T.F.AI.CHAT.SEND | translate"
-      (click)="send()"
-    >
-      <mat-icon>send</mat-icon>
-    </button>
-  </footer>
+      <ai-breakdown-card></ai-breakdown-card>
+    </ai-chat>
+  }
 </div>

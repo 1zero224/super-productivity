@@ -117,7 +117,8 @@
       },
       "CTX": {
         "TODAY": "今天还剩 {{nr}} 项",
-        "OVERDUE": "{{nr}} 项已逾期"
+        "OVERDUE": "{{nr}} 项已逾期",
+        "GOALS": "{{nr}} 个目标"
       },
       "SETTINGS": {
         "TITLE": "AI 设置",
@@ -128,7 +129,23 @@
         "NOT_CONFIGURED": "连接一个 OpenAI 兼容接口（OpenAI、DeepSeek、通义千问、Kimi、OpenRouter、Ollama 等）即可使用 AI 功能。",
         "TEST": "测试连接",
         "TEST_OK": "连接正常。",
-        "SAVE": "保存"
+        "SAVE": "保存",
+        "AUTOMATION": {
+          "TITLE": "定时报告",
+          "DAILY": "日报：今日建议",
+          "WEEKLY": "周报：每周复盘",
+          "TIME": "时间",
+          "DAY": "星期",
+          "AUTO_OPEN": "报告生成后自动打开 AI 面板",
+          "HINT": "应用打开时按时运行；如果到点时应用没开，下次打开时补生成。",
+          "SUN": "周日",
+          "MON": "周一",
+          "TUE": "周二",
+          "WED": "周三",
+          "THU": "周四",
+          "FRI": "周五",
+          "SAT": "周六"
+        }
       },
       "BREAKDOWN": {
         "TITLE": "微习惯拆解",
@@ -147,7 +164,9 @@
         "CLEAR": "清空对话",
         "EMPTY": "可以让我帮你安排今天、按四象限整理任务或拆解任务。",
         "SUGGEST_PLAN": "今天我应该先做什么？帮我安排一下今天。",
-        "SUGGEST_QUADRANT": "看看我今天的任务，给出四象限调整建议。"
+        "SUGGEST_QUADRANT": "看看我今天的任务，给出四象限调整建议。",
+        "NEW": "新对话",
+        "SUGGEST_GOALS": "我的哪个目标最近投入太少？这周应该怎么调整？"
       },
       "TOOL": {
         "PENDING": "等待确认",
@@ -157,6 +176,63 @@
       },
       "S": {
         "SUBTASKS_ADDED": "已添加 {{nr}} 个子任务"
+      },
+      "PAGE": {
+        "OPEN_FULL": "打开 AI 页面",
+        "HISTORY": "历史对话",
+        "NO_HISTORY": "还没有对话",
+        "TAB_CHAT": "对话",
+        "TAB_REPORTS": "建议",
+        "TAB_MEMORY": "记忆"
+      },
+      "REPORT": {
+        "DAILY": "今日建议",
+        "WEEKLY": "每周复盘",
+        "SUGGESTIONS": "建议的调整",
+        "APPLY_SELECTED": "应用所选（{{nr}}）",
+        "MEMORIES_SAVED": "已将 {{nr}} 条结论写入记忆",
+        "GENERATE_DAILY": "立即生成今日建议",
+        "GENERATE_WEEKLY": "立即生成周报",
+        "GENERATING": "正在生成…",
+        "EMPTY": "还没有报告。报告会按时自动生成，也可以现在手动生成。",
+        "S": {
+          "APPLIED": "已应用 {{nr}} 条建议",
+          "APPLIED_WITH_ERRORS": "已应用 {{nr}} 条建议，{{failed}} 条失败"
+        }
+      },
+      "MEMORY": {
+        "INTRO": "助手记住的关于你的信息，用来让建议更贴合你。只保存在本设备。",
+        "ADD_PLACEHOLDER": "例如：我上午专注力最好",
+        "ADD": "添加",
+        "EMPTY": "还没有记忆。",
+        "KIND_PREFERENCE": "偏好",
+        "KIND_HABIT": "习惯",
+        "KIND_REVIEW": "复盘",
+        "KIND_FACT": "事实",
+        "SOURCE_CHAT": "来自对话",
+        "SOURCE_WEEKLY": "来自周报",
+        "SOURCE_USER": "手动添加"
+      },
+      "GOALS": {
+        "TITLE": "目标",
+        "INTRO": "长期、中期和短期目标。AI 助手会据此规划和复盘。只保存在本设备。",
+        "ASK_AI": "问 AI",
+        "LONG": "长期目标",
+        "MID": "中期目标",
+        "SHORT": "短期目标",
+        "ADD": "添加目标",
+        "EDIT": "编辑目标",
+        "EMPTY": "添加一个目标",
+        "STATUS_ACTIVE": "进行中",
+        "STATUS_DONE": "已达成",
+        "STATUS_DROPPED": "已放弃",
+        "F_TITLE": "标题",
+        "F_DESCRIPTION": "描述",
+        "F_HORIZON": "周期",
+        "F_STATUS": "状态",
+        "F_TARGET_DATE": "目标日期",
+        "F_PROJECTS": "关联项目",
+        "F_TAGS": "关联标签"
       }
     },
     "ANDROID": {
@@ -3037,7 +3113,9 @@
     "TOGGLE_TRACK_TIME": "开始/停止跟踪时间",
     "TRIGGER_SYNC": "同步！",
     "UNPLAN_ALL_TASKS": "取消计划所有任务",
-    "ARCHIVED_PROJECTS": "已归档项目"
+    "ARCHIVED_PROJECTS": "已归档项目",
+    "AI": "AI 助手",
+    "GOALS": "目标"
   },
   "MIGRATE": {
     "C_DOWNLOAD_BACKUP": "是否要下载旧版数据的备份（可用于旧版本的 Super Productivity）？",

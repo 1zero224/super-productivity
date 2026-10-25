@@ -1,0 +1,16 @@
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-half);
+  min-width: min(520px, 80vw);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s);
+
+  mat-form-field {
+    flex: 1 1 140px;
+  }
+}

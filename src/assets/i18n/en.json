@@ -105,7 +105,8 @@
       },
       "CTX": {
         "TODAY": "{{nr}} left today",
-        "OVERDUE": "{{nr}} overdue"
+        "OVERDUE": "{{nr}} overdue",
+        "GOALS": "{{nr}} goals"
       },
       "SETTINGS": {
         "TITLE": "AI settings",
@@ -116,7 +117,23 @@
         "NOT_CONFIGURED": "Connect an OpenAI-compatible endpoint (OpenAI, DeepSeek, Qwen, Kimi, OpenRouter, Ollama…) to use AI features.",
         "TEST": "Test connection",
         "TEST_OK": "Connection works.",
-        "SAVE": "Save"
+        "SAVE": "Save",
+        "AUTOMATION": {
+          "TITLE": "Scheduled reports",
+          "DAILY": "Daily: today's recommendation",
+          "WEEKLY": "Weekly review",
+          "TIME": "Time",
+          "DAY": "Day",
+          "AUTO_OPEN": "Open the AI panel when a report is ready",
+          "HINT": "Runs while the app is open. If the app was closed at that time, the report is generated the next time you open it.",
+          "SUN": "Sunday",
+          "MON": "Monday",
+          "TUE": "Tuesday",
+          "WED": "Wednesday",
+          "THU": "Thursday",
+          "FRI": "Friday",
+          "SAT": "Saturday"
+        }
       },
       "BREAKDOWN": {
         "TITLE": "Micro-habit breakdown",
@@ -135,7 +152,9 @@
         "CLEAR": "Clear conversation",
         "EMPTY": "Ask me to plan your day, sort tasks into quadrants or break tasks down.",
         "SUGGEST_PLAN": "What should I do first today, and how should I arrange my day?",
-        "SUGGEST_QUADRANT": "Review my today list and suggest Eisenhower quadrant adjustments."
+        "SUGGEST_QUADRANT": "Review my today list and suggest Eisenhower quadrant adjustments.",
+        "NEW": "New conversation",
+        "SUGGEST_GOALS": "Which of my goals is getting too little attention, and what should I do about it this week?"
       },
       "TOOL": {
         "PENDING": "Waiting for approval",
@@ -145,6 +164,63 @@
       },
       "S": {
         "SUBTASKS_ADDED": "Added {{nr}} subtasks"
+      },
+      "PAGE": {
+        "OPEN_FULL": "Open AI page",
+        "HISTORY": "History",
+        "NO_HISTORY": "No conversations yet",
+        "TAB_CHAT": "Chat",
+        "TAB_REPORTS": "Suggestions",
+        "TAB_MEMORY": "Memory"
+      },
+      "REPORT": {
+        "DAILY": "Today's recommendation",
+        "WEEKLY": "Weekly review",
+        "SUGGESTIONS": "Suggested changes",
+        "APPLY_SELECTED": "Apply selected ({{nr}})",
+        "MEMORIES_SAVED": "{{nr}} conclusions saved to memory",
+        "GENERATE_DAILY": "Generate today's recommendation",
+        "GENERATE_WEEKLY": "Generate weekly review",
+        "GENERATING": "Generating…",
+        "EMPTY": "No reports yet. They are generated on schedule, or generate one now.",
+        "S": {
+          "APPLIED": "Applied {{nr}} suggestions",
+          "APPLIED_WITH_ERRORS": "Applied {{nr}} suggestions, {{failed}} failed"
+        }
+      },
+      "MEMORY": {
+        "INTRO": "What the assistant remembers about you. It is used to personalize advice and stays on this device.",
+        "ADD_PLACEHOLDER": "e.g. I focus best before noon",
+        "ADD": "Add",
+        "EMPTY": "Nothing remembered yet.",
+        "KIND_PREFERENCE": "Preference",
+        "KIND_HABIT": "Habit",
+        "KIND_REVIEW": "Review",
+        "KIND_FACT": "Fact",
+        "SOURCE_CHAT": "From chat",
+        "SOURCE_WEEKLY": "From weekly review",
+        "SOURCE_USER": "Added by you"
+      },
+      "GOALS": {
+        "TITLE": "Goals",
+        "INTRO": "Long-, mid- and short-term goals. The AI assistant plans and reviews against them. Stored only on this device.",
+        "ASK_AI": "Ask AI",
+        "LONG": "Long-term",
+        "MID": "Mid-term",
+        "SHORT": "Short-term",
+        "ADD": "Add goal",
+        "EDIT": "Edit goal",
+        "EMPTY": "Add a goal",
+        "STATUS_ACTIVE": "Active",
+        "STATUS_DONE": "Achieved",
+        "STATUS_DROPPED": "Dropped",
+        "F_TITLE": "Title",
+        "F_DESCRIPTION": "Description",
+        "F_HORIZON": "Horizon",
+        "F_STATUS": "Status",
+        "F_TARGET_DATE": "Target date",
+        "F_PROJECTS": "Linked projects",
+        "F_TAGS": "Linked tags"
       }
     },
     "IOS_SHARE": {
@@ -3117,7 +3193,9 @@
     "TOGGLE_TRACK_TIME": "Start/stop tracking time",
     "TRIGGER_SYNC": "Sync!",
     "UNPLAN_ALL_TASKS": "Unplan all tasks",
-    "ARCHIVED_PROJECTS": "Archived Projects"
+    "ARCHIVED_PROJECTS": "Archived Projects",
+    "AI": "AI assistant",
+    "GOALS": "Goals"
   },
   "MIGRATE": {
     "C_DOWNLOAD_BACKUP": "Do you want to download a backup of your legacy data (can be used with older versions of Super Productivity)?",

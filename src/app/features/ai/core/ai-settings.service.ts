@@ -1,45 +1,46 @@
 import { computed, Injectable, signal } from '@angular/core';
-import { DBSchema, IDBPDatabase, openDB } from 'idb';
-import { AiSettings, DEFAULT_AI_SETTINGS } from './ai-client.model';
+import {
+  AiSettings,
+  DEFAULT_AI_AUTOMATION_SETTINGS,
+  DEFAULT_AI_SETTINGS,
+} from './ai-client.model';
+import { getAiKv, setAiKv } from './ai-db';
 import { Log } from '../../../core/log';
 
 /**
- * Device-local AI settings (endpoint, model, API key).
+ * Device-local AI settings (endpoint, model, API key, automation).
  *
- * Lives in its own IndexedDB database, outside op-log sync, exports and
+ * Lives in the `sup-ai` IndexedDB database, outside op-log sync, exports and
  * backups — like the plugin secret store. The key is plaintext at rest.
  */
 
-const DB_NAME = 'sup-ai';
-const DB_STORE_NAME = 'kv';
-const DB_VERSION = 1;
 const SETTINGS_KEY = 'settings';
-
-interface AiDb extends DBSchema {
-  [DB_STORE_NAME]: {
-    key: string;
-    value: unknown;
-  };
-}
+const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 const AiLog = Log.withContext('ai');
 
-let initPromise: Promise<IDBPDatabase<AiDb>> | undefined;
-
-export const ensureAiDb = (): Promise<IDBPDatabase<AiDb>> => {
-  if (!initPromise) {
-    initPromise = openDB<AiDb>(DB_NAME, DB_VERSION, {
-      upgrade: (database) => {
-        if (!database.objectStoreNames.contains(DB_STORE_NAME)) {
-          database.createObjectStore(DB_STORE_NAME);
-        }
-      },
-    });
-    initPromise.catch(() => {
-      initPromise = undefined;
-    });
-  }
-  return initPromise;
+export const normalizeAiSettings = (raw: Partial<AiSettings> | undefined): AiSettings => {
+  const a = { ...DEFAULT_AI_AUTOMATION_SETTINGS, ...(raw?.automation || {}) };
+  return {
+    baseUrl: (raw?.baseUrl ?? DEFAULT_AI_SETTINGS.baseUrl).trim(),
+    model: (raw?.model ?? DEFAULT_AI_SETTINGS.model).trim(),
+    apiKey: (raw?.apiKey ?? DEFAULT_AI_SETTINGS.apiKey).trim(),
+    automation: {
+      isDailyEnabled: !!a.isDailyEnabled,
+      dailyTime: TIME_RE.test(a.dailyTime)
+        ? a.dailyTime
+        : DEFAULT_AI_AUTOMATION_SETTINGS.dailyTime,
+      isWeeklyEnabled: !!a.isWeeklyEnabled,
+      weeklyDay:
+        Number.isInteger(a.weeklyDay) && a.weeklyDay >= 0 && a.weeklyDay <= 6
+          ? a.weeklyDay
+          : DEFAULT_AI_AUTOMATION_SETTINGS.weeklyDay,
+      weeklyTime: TIME_RE.test(a.weeklyTime)
+        ? a.weeklyTime
+        : DEFAULT_AI_AUTOMATION_SETTINGS.weeklyTime,
+      isAutoOpen: !!a.isAutoOpen,
+    },
+  };
 };
 
 @Injectable({ providedIn: 'root' })
@@ -57,11 +58,8 @@ export class AiSettingsService {
     if (!this._loadPromise) {
       this._loadPromise = (async () => {
         try {
-          const db = await ensureAiDb();
-          const stored = (await db.get(DB_STORE_NAME, SETTINGS_KEY)) as
-            | Partial<AiSettings>
-            | undefined;
-          const merged = { ...DEFAULT_AI_SETTINGS, ...(stored || {}) };
+          const stored = await getAiKv<Partial<AiSettings>>(SETTINGS_KEY);
+          const merged = normalizeAiSettings(stored);
           this._settings.set(merged);
           return merged;
         } catch (e) {
@@ -75,13 +73,8 @@ export class AiSettingsService {
   }
 
   async save(settings: AiSettings): Promise<void> {
-    const cleaned: AiSettings = {
-      baseUrl: settings.baseUrl.trim(),
-      model: settings.model.trim(),
-      apiKey: settings.apiKey.trim(),
-    };
-    const db = await ensureAiDb();
-    await db.put(DB_STORE_NAME, cleaned, SETTINGS_KEY);
+    const cleaned = normalizeAiSettings(settings);
+    await setAiKv(SETTINGS_KEY, cleaned);
     this._settings.set(cleaned);
     this._loadPromise = Promise.resolve(cleaned);
   }

@@ -111,6 +111,7 @@ import { suspendAudioContext, unlockAudioContext } from './app/util/audio-contex
 import { NetworkRetryInterceptorService } from './app/core/http/network-retry-interceptor.service';
 import { routeCapacitorAppUrl } from './app/core/app-url-open-router';
 import { AppUriQuickActionsService } from './app/core-ui/app-uri-actions/app-uri-quick-actions.service';
+import { provideAiStartup } from './app/features/ai/ai-startup';
 
 if (environment.production || environment.stage) {
   enableProdMode();
@@ -412,6 +413,8 @@ bootstrapApplication(AppComponent, {
       deps: [LocalDraftService],
       multi: true,
     },
+    // Scheduled AI reports (daily / weekly), started after data load
+    provideAiStartup(),
     // Note: ImmediateUploadService now initializes itself in constructor
     // after DataInitStateService.isAllDataLoadedInitially$ fires to avoid
     // race condition where upload attempts happen before sync config is loaded

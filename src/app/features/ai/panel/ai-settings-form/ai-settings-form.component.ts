@@ -10,11 +10,24 @@ import { FormsModule } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
 import { MatFormField, MatHint, MatLabel } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
+import { MatOption, MatSelect } from '@angular/material/select';
+import { MatSlideToggle } from '@angular/material/slide-toggle';
 import { TranslatePipe } from '@ngx-translate/core';
 import { T } from '../../../../t.const';
 import { AiSettingsService } from '../../core/ai-settings.service';
 import { AiClientService } from '../../core/ai-client.service';
-import { AiSettings } from '../../core/ai-client.model';
+import { AiAutomationSettings, AiSettings } from '../../core/ai-client.model';
+
+// Index = JS weekday (0 = Sunday)
+const WEEKDAY_LABELS = [
+  T.F.AI.SETTINGS.AUTOMATION.SUN,
+  T.F.AI.SETTINGS.AUTOMATION.MON,
+  T.F.AI.SETTINGS.AUTOMATION.TUE,
+  T.F.AI.SETTINGS.AUTOMATION.WED,
+  T.F.AI.SETTINGS.AUTOMATION.THU,
+  T.F.AI.SETTINGS.AUTOMATION.FRI,
+  T.F.AI.SETTINGS.AUTOMATION.SAT,
+];
 
 @Component({
   selector: 'ai-settings-form',
@@ -25,6 +38,9 @@ import { AiSettings } from '../../core/ai-client.model';
     MatLabel,
     MatHint,
     MatInput,
+    MatSelect,
+    MatOption,
+    MatSlideToggle,
     TranslatePipe,
   ],
   templateUrl: './ai-settings-form.component.html',
@@ -36,6 +52,7 @@ export class AiSettingsFormComponent implements OnInit {
   private readonly _client = inject(AiClientService);
 
   protected readonly T = T;
+  readonly WEEKDAYS = WEEKDAY_LABELS.map((label, value) => ({ label, value }));
   readonly saved = output<void>();
 
   readonly model = signal<AiSettings>({ ...this._settingsService.settings() });
@@ -46,9 +63,16 @@ export class AiSettingsFormComponent implements OnInit {
     this.model.set({ ...(await this._settingsService.load()) });
   }
 
-  setField(key: keyof AiSettings, value: string): void {
+  setField(key: 'baseUrl' | 'model' | 'apiKey', value: string): void {
     this.model.update((m) => ({ ...m, [key]: value }));
     this.testState.set('idle');
+  }
+
+  setAutomation<K extends keyof AiAutomationSettings>(
+    key: K,
+    value: AiAutomationSettings[K],
+  ): void {
+    this.model.update((m) => ({ ...m, automation: { ...m.automation, [key]: value } }));
   }
 
   async test(): Promise<void> {

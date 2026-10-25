@@ -14,6 +14,24 @@ const reply = (content: string, toolCalls: AiToolCall[] = []): AiChatResult => (
   finishReason: toolCalls.length ? 'tool_calls' : 'stop',
 });
 
+describe('AiAgent.load', () => {
+  it('replaces the transcript so a stored conversation can continue', () => {
+    const agent = new AiAgent({
+      chat: async () => ({ content: '', toolCalls: [], finishReason: 'stop' }),
+      getSystemPrompt: () => '',
+      tools: [],
+      confirm: async () => true,
+      onEvent: () => undefined,
+    });
+    agent.messages.push({ role: 'user', content: 'old' });
+    agent.load([
+      { role: 'user', content: 'a' },
+      { role: 'assistant', content: 'b' },
+    ]);
+    expect(agent.messages.map((m) => m.content)).toEqual(['a', 'b']);
+  });
+});
+
 describe('AiAgent', () => {
   let events: AiAgentEvent[];
   let readTool: AiAgentTool;

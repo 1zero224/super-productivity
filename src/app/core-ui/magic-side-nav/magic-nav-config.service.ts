@@ -447,6 +447,23 @@ export class MagicNavConfigService {
       });
     }
 
+    items.push(
+      {
+        type: 'route',
+        id: 'ai',
+        label: T.MH.AI,
+        icon: 'auto_awesome',
+        route: '/ai',
+      },
+      {
+        type: 'route',
+        id: 'goals',
+        label: T.MH.GOALS,
+        icon: 'flag',
+        route: '/goals',
+      },
+    );
+
     return items;
   }
 

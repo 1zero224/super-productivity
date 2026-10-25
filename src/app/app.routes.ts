@@ -99,6 +99,23 @@ export const APP_ROUTES: Routes = [
     },
     canActivate: [FeatureEnabledGuard, FocusOverlayOpenGuard],
   },
+  // AI assistant: own lazy chunks, not part of the preloaded pages barrel
+  {
+    path: 'ai',
+    loadComponent: () =>
+      import('./features/ai/ai-page/ai-page.component').then((m) => m.AiPageComponent),
+    data: { page: 'ai' },
+    canActivate: [FocusOverlayOpenGuard],
+  },
+  {
+    path: 'goals',
+    loadComponent: () =>
+      import('./features/ai/goals/goals-page/goals-page.component').then(
+        (m) => m.GoalsPageComponent,
+      ),
+    data: { page: 'goals' },
+    canActivate: [FocusOverlayOpenGuard],
+  },
   {
     path: 'archived-projects',
     loadComponent: () =>

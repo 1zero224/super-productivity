@@ -33,6 +33,23 @@ export class AiClientService {
     return this.chatWithSettings(settings, req);
   }
 
+  /**
+   * Non-streamed request in JSON mode, returning the raw content. Some
+   * OpenAI-compatible providers reject `response_format`; retries plain then.
+   */
+  async chatJson(
+    req: Omit<AiChatRequest, 'isJsonResponse' | 'onTextDelta'>,
+  ): Promise<string> {
+    try {
+      return (await this.chat({ ...req, isJsonResponse: true })).content;
+    } catch (e) {
+      if (e instanceof AiRequestError && e.status === 400) {
+        return (await this.chat(req)).content;
+      }
+      throw e;
+    }
+  }
+
   async chatWithSettings(
     settings: AiSettings,
     req: AiChatRequest,

@@ -1,0 +1,120 @@
+<h2 mat-dialog-title>
+  {{ (isEdit ? T.F.AI.GOALS.EDIT : T.F.AI.GOALS.ADD) | translate }}
+</h2>
+
+<form
+  (ngSubmit)="save()"
+  class="goal-form"
+>
+  <mat-dialog-content class="content">
+    <mat-form-field>
+      <mat-label>{{ T.F.AI.GOALS.F_TITLE | translate }}</mat-label>
+      <input
+        matInput
+        name="title"
+        required
+        maxlength="200"
+        cdkFocusInitial
+        [ngModel]="model().title"
+        (ngModelChange)="set('title', $event)"
+      />
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>{{ T.F.AI.GOALS.F_DESCRIPTION | translate }}</mat-label>
+      <textarea
+        matInput
+        name="description"
+        rows="3"
+        maxlength="2000"
+        [ngModel]="model().description"
+        (ngModelChange)="set('description', $event)"
+      ></textarea>
+    </mat-form-field>
+
+    <div class="row">
+      <mat-form-field>
+        <mat-label>{{ T.F.AI.GOALS.F_HORIZON | translate }}</mat-label>
+        <mat-select
+          name="horizon"
+          [ngModel]="model().horizon"
+          (ngModelChange)="set('horizon', $event)"
+        >
+          @for (h of HORIZONS; track h.value) {
+            <mat-option [value]="h.value">{{ h.label | translate }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field>
+        <mat-label>{{ T.F.AI.GOALS.F_STATUS | translate }}</mat-label>
+        <mat-select
+          name="status"
+          [ngModel]="model().status"
+          (ngModelChange)="set('status', $event)"
+        >
+          @for (s of STATUSES; track s.value) {
+            <mat-option [value]="s.value">{{ s.label | translate }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field>
+        <mat-label>{{ T.F.AI.GOALS.F_TARGET_DATE | translate }}</mat-label>
+        <input
+          matInput
+          type="date"
+          name="targetDate"
+          [ngModel]="model().targetDate ?? ''"
+          (ngModelChange)="setTargetDate($event)"
+        />
+      </mat-form-field>
+    </div>
+
+    <mat-form-field>
+      <mat-label>{{ T.F.AI.GOALS.F_PROJECTS | translate }}</mat-label>
+      <mat-select
+        name="projectIds"
+        multiple
+        [ngModel]="model().projectIds"
+        (ngModelChange)="set('projectIds', $event)"
+      >
+        @for (p of projects(); track p.id) {
+          <mat-option [value]="p.id">{{ p.title }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>{{ T.F.AI.GOALS.F_TAGS | translate }}</mat-label>
+      <mat-select
+        name="tagIds"
+        multiple
+        [ngModel]="model().tagIds"
+        (ngModelChange)="set('tagIds', $event)"
+      >
+        @for (tag of tags(); track tag.id) {
+          <mat-option [value]="tag.id">{{ tag.title }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button
+      mat-button
+      type="button"
+      (click)="cancel()"
+    >
+      {{ T.G.CANCEL | translate }}
+    </button>
+    <button
+      mat-flat-button
+      color="primary"
+      type="submit"
+      [disabled]="!model().title.trim()"
+    >
+      {{ T.G.SAVE | translate }}
+    </button>
+  </mat-dialog-actions>
+</form>

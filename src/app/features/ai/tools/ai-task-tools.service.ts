@@ -16,6 +16,17 @@ import { WorkContextService } from '../../work-context/work-context.service';
 import { WorkContextType } from '../../work-context/work-context.model';
 import { DateService } from '../../../core/date/date.service';
 import { AiAgentTool } from '../agent/ai-agent.model';
+import { PlannerActions } from '../../planner/store/planner.actions';
+import { TaskRepeatCfgService } from '../../task-repeat-cfg/task-repeat-cfg.service';
+import {
+  DEFAULT_TASK_REPEAT_CFG,
+  RepeatCycleOption,
+  TaskRepeatCfgCopy,
+} from '../../task-repeat-cfg/task-repeat-cfg.model';
+import { GlobalConfigService } from '../../config/global-config.service';
+import { DEFAULT_GLOBAL_CONFIG } from '../../config/default-global-config.const';
+import { getDateTimeFromClockString } from '../../../util/get-date-time-from-clock-string';
+import { isValidSplitTime } from '../../../util/is-valid-split-time';
 
 const MAX_NOTES_CHARS = 1500;
 const DEFAULT_LIST_LIMIT = 30;
@@ -69,6 +80,84 @@ const optionalMinutes = (v: unknown): number | undefined => {
   return Math.round(n);
 };
 
+const DAY_STR_RE = /^\d{4}-\d{2}-\d{2}$/;
+const WEEKDAY_KEYS = [
+  'sunday',
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday',
+] as const;
+const REPEAT_CYCLES: RepeatCycleOption[] = ['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY'];
+
+/** Parses "YYYY-MM-DD" as a local calendar day; throws on invalid input. */
+export const parseLocalDay = (day: string): Date => {
+  if (!DAY_STR_RE.test(day)) {
+    throw new Error('day must be YYYY-MM-DD');
+  }
+  const [y, m, d] = day.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  if (date.getFullYear() !== y || date.getMonth() !== m - 1 || date.getDate() !== d) {
+    throw new Error('day is not a valid date');
+  }
+  return date;
+};
+
+export interface AiRepeatTaskInput {
+  title: string;
+  repeatCycle: RepeatCycleOption;
+  repeatEvery?: number;
+  // 0 = Sunday … 6 = Saturday; only for WEEKLY
+  weekdays?: number[];
+  startTime?: string;
+  startDate?: string;
+  estimateMinutes?: number;
+}
+
+/** Builds the repeat cfg for `create_repeat_task` on top of the app defaults. */
+export const buildRepeatCfg = (
+  input: AiRepeatTaskInput,
+  todayStr: string,
+): Omit<TaskRepeatCfgCopy, 'id'> => {
+  if (!REPEAT_CYCLES.includes(input.repeatCycle)) {
+    throw new Error(`repeatCycle must be one of ${REPEAT_CYCLES.join(', ')}`);
+  }
+  const repeatEvery = Math.round(Number(input.repeatEvery ?? 1));
+  if (!Number.isFinite(repeatEvery) || repeatEvery < 1 || repeatEvery > 365) {
+    throw new Error('repeatEvery must be between 1 and 365');
+  }
+  if (input.startTime !== undefined && !isValidSplitTime(input.startTime)) {
+    throw new Error('startTime must be HH:mm');
+  }
+  if (input.startDate !== undefined) {
+    parseLocalDay(input.startDate);
+  }
+  const weekdayFlags: Partial<TaskRepeatCfgCopy> = {};
+  if (input.repeatCycle === 'WEEKLY' && input.weekdays?.length) {
+    const days = new Set(input.weekdays.filter((d) => Number.isInteger(d)));
+    WEEKDAY_KEYS.forEach((key, i) => (weekdayFlags[key] = days.has(i)));
+    if (!WEEKDAY_KEYS.some((key) => weekdayFlags[key])) {
+      throw new Error('weekdays must contain values 0-6');
+    }
+  }
+  return {
+    ...DEFAULT_TASK_REPEAT_CFG,
+    title: input.title.slice(0, MAX_TITLE_CHARS),
+    quickSetting: 'CUSTOM',
+    repeatCycle: input.repeatCycle,
+    repeatEvery,
+    startDate: input.startDate ?? todayStr,
+    lastTaskCreationDay: todayStr,
+    ...weekdayFlags,
+    ...(input.startTime ? { startTime: input.startTime } : {}),
+    ...(input.estimateMinutes
+      ? { defaultEstimate: input.estimateMinutes * MS_PER_MIN }
+      : {}),
+  };
+};
+
 export const wrapUntrusted = (text: string): string =>
   `<untrusted_user_content>${text}</untrusted_user_content>`;
 
@@ -98,6 +187,8 @@ export class AiTaskToolsService {
   private readonly _taskService = inject(TaskService);
   private readonly _workContextService = inject(WorkContextService);
   private readonly _dateService = inject(DateService);
+  private readonly _taskRepeatCfgService = inject(TaskRepeatCfgService);
+  private readonly _globalConfigService = inject(GlobalConfigService);
 
   // ---------- reads ----------
 
@@ -288,6 +379,56 @@ export class AiTaskToolsService {
     this._taskService.addToToday(task);
   }
 
+  /**
+   * Plans a task for a day, or for an exact time when `time` is given. The
+   * existing actions keep dueDay / dueWithTime mutually exclusive
+   * (ARCHITECTURE-DECISIONS.md #1).
+   */
+  async scheduleTask(id: string, day: string, time?: string): Promise<void> {
+    const task = await this.getTask(id);
+    if (!task) {
+      throw new Error('Task not found');
+    }
+    if (task.isDone) {
+      throw new Error('Task is already done');
+    }
+    const date = parseLocalDay(day);
+    if (time !== undefined) {
+      if (!isValidSplitTime(time)) {
+        throw new Error('time must be HH:mm');
+      }
+      const remindCfg =
+        this._globalConfigService.cfg()?.reminder.defaultTaskRemindOption ??
+        DEFAULT_GLOBAL_CONFIG.reminder.defaultTaskRemindOption!;
+      this._taskService.scheduleTask(
+        task,
+        getDateTimeFromClockString(time, date),
+        remindCfg,
+        false,
+      );
+    } else {
+      this._store.dispatch(PlannerActions.planTaskForDay({ task, day }));
+    }
+  }
+
+  createRepeatTask(input: AiRepeatTaskInput): { taskId: string; repeatCfgId: string } {
+    const cfg = buildRepeatCfg(input, this._todayStr());
+    const taskId = this.createTask({
+      title: input.title,
+      estimateMinutes: input.estimateMinutes,
+    });
+    const projectId =
+      this._workContextService.activeWorkContextType === WorkContextType.PROJECT
+        ? (this._workContextService.activeWorkContextId ?? null)
+        : null;
+    const repeatCfgId = this._taskRepeatCfgService.addTaskRepeatCfgToTask(
+      taskId,
+      projectId,
+      { ...cfg, projectId },
+    );
+    return { taskId, repeatCfgId };
+  }
+
   // ---------- agent tool definitions ----------
 
   buildAgentTools(): AiAgentTool[] {
@@ -476,6 +617,65 @@ export class AiTaskToolsService {
           await this.setDone(requireString(args, 'id'));
           return { ok: true };
         },
+      },
+      {
+        name: 'schedule_task',
+        kind: 'write',
+        description:
+          'Plan a task for a day (YYYY-MM-DD). With "time" (HH:mm) it is scheduled for that exact time with a reminder.',
+        parameters: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            day: { type: 'string', description: 'YYYY-MM-DD' },
+            time: { type: 'string', description: 'HH:mm, optional' },
+          },
+          required: ['id', 'day'],
+        },
+        execute: async (args) => {
+          await this.scheduleTask(
+            requireString(args, 'id'),
+            requireString(args, 'day'),
+            typeof args.time === 'string' && args.time.trim()
+              ? args.time.trim()
+              : undefined,
+          );
+          return { ok: true };
+        },
+      },
+      {
+        name: 'create_repeat_task',
+        kind: 'write',
+        description:
+          'Create a recurring task. weekdays (0 = Sunday … 6 = Saturday) only apply to WEEKLY.',
+        parameters: {
+          type: 'object',
+          properties: {
+            title: { type: 'string' },
+            repeatCycle: { type: 'string', enum: REPEAT_CYCLES },
+            repeatEvery: { type: 'number', description: 'every N cycles, default 1' },
+            weekdays: { type: 'array', items: { type: 'number' } },
+            startDate: { type: 'string', description: 'YYYY-MM-DD, default today' },
+            startTime: { type: 'string', description: 'HH:mm, optional' },
+            estimateMinutes: { type: 'number' },
+          },
+          required: ['title', 'repeatCycle'],
+        },
+        execute: async (args) =>
+          this.createRepeatTask({
+            title: requireString(args, 'title'),
+            repeatCycle: args.repeatCycle as RepeatCycleOption,
+            repeatEvery: typeof args.repeatEvery === 'number' ? args.repeatEvery : 1,
+            weekdays: Array.isArray(args.weekdays)
+              ? (args.weekdays as unknown[]).map(Number)
+              : undefined,
+            startDate: typeof args.startDate === 'string' ? args.startDate : undefined,
+            startTime:
+              typeof args.startTime === 'string' && args.startTime.trim()
+                ? args.startTime.trim()
+                : undefined,
+            estimateMinutes: optionalMinutes(args.estimateMinutes),
+          }),
       },
     ];
   }

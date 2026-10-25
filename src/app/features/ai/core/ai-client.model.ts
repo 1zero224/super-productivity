@@ -41,14 +41,37 @@ export interface AiChatResult {
   finishReason: string | null;
 }
 
+export interface AiAutomationSettings {
+  isDailyEnabled: boolean;
+  // Local time "HH:mm"
+  dailyTime: string;
+  isWeeklyEnabled: boolean;
+  // 0 = Sunday … 6 = Saturday
+  weeklyDay: number;
+  weeklyTime: string;
+  // Open the AI panel when a scheduled report is ready
+  isAutoOpen: boolean;
+}
+
 export interface AiSettings {
   baseUrl: string;
   model: string;
   apiKey: string;
+  automation: AiAutomationSettings;
 }
+
+export const DEFAULT_AI_AUTOMATION_SETTINGS: AiAutomationSettings = {
+  isDailyEnabled: true,
+  dailyTime: '08:30',
+  isWeeklyEnabled: true,
+  weeklyDay: 0,
+  weeklyTime: '20:00',
+  isAutoOpen: true,
+};
 
 export const DEFAULT_AI_SETTINGS: AiSettings = {
   baseUrl: 'https://api.openai.com/v1',
   model: 'gpt-4o-mini',
   apiKey: '',
+  automation: DEFAULT_AI_AUTOMATION_SETTINGS,
 };

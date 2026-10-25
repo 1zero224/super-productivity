@@ -1,0 +1,63 @@
+<p class="intro">{{ T.F.AI.MEMORY.INTRO | translate }}</p>
+
+<form
+  class="add-form"
+  (ngSubmit)="add()"
+>
+  <mat-form-field class="text-field">
+    <mat-label>{{ T.F.AI.MEMORY.ADD_PLACEHOLDER | translate }}</mat-label>
+    <input
+      matInput
+      name="text"
+      maxlength="500"
+      [ngModel]="newText()"
+      (ngModelChange)="newText.set($event)"
+    />
+  </mat-form-field>
+  <mat-form-field class="kind-field">
+    <mat-select
+      name="kind"
+      [ngModel]="newKind()"
+      (ngModelChange)="newKind.set($event)"
+    >
+      @for (kind of KINDS; track kind) {
+        <mat-option [value]="kind">{{ KIND_LABELS[kind] | translate }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <button
+    mat-flat-button
+    color="primary"
+    type="submit"
+    [disabled]="!newText().trim()"
+  >
+    {{ T.F.AI.MEMORY.ADD | translate }}
+  </button>
+</form>
+
+<ul class="memory-list">
+  @for (m of memoryService.memories(); track m.id) {
+    <li class="memory">
+      <span
+        class="kind"
+        [class]="'kind-' + m.kind"
+        >{{ KIND_LABELS[m.kind] | translate }}</span
+      >
+      <div class="memory-main">
+        <div class="memory-text">{{ m.text }}</div>
+        <div class="memory-meta">
+          {{ SOURCE_LABELS[m.source] | translate }} · {{ m.created | date: 'shortDate' }}
+        </div>
+      </div>
+      <button
+        mat-icon-button
+        [matTooltip]="T.G.DELETE | translate"
+        (click)="remove(m.id)"
+      >
+        <mat-icon>delete_outline</mat-icon>
+      </button>
+    </li>
+  } @empty {
+    <li class="empty">{{ T.F.AI.MEMORY.EMPTY | translate }}</li>
+  }
+</ul>
