@@ -25,6 +25,7 @@ import {
   AiFeature,
   AiProvider,
   AiSettings,
+  isProviderConfigured,
   resolveProvider,
 } from '../../core/ai-client.model';
 
@@ -82,12 +83,36 @@ export class AiSettingsFormComponent implements OnInit {
 
   readonly model = signal<AiSettings>(structuredClone(this._settingsService.settings()));
   readonly testStates = signal<Record<string, ProviderTestState>>({});
+  // Collapsed by default; incomplete providers open so they get filled in
+  readonly expandedIds = signal<ReadonlySet<string>>(new Set());
   readonly defaultProviderName = computed(
     () => resolveProvider(this.model())?.name ?? '',
   );
 
   async ngOnInit(): Promise<void> {
-    this.model.set(structuredClone(await this._settingsService.load()));
+    const settings = structuredClone(await this._settingsService.load());
+    this.model.set(settings);
+    this.expandedIds.set(
+      new Set(
+        settings.providers.filter((p) => !isProviderConfigured(p)).map((p) => p.id),
+      ),
+    );
+  }
+
+  isConfigured(provider: AiProvider): boolean {
+    return isProviderConfigured(provider);
+  }
+
+  toggleExpanded(id: string): void {
+    this.expandedIds.update((ids) => {
+      const next = new Set(ids);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
   }
 
   setProvider<K extends keyof Omit<AiProvider, 'id'>>(
@@ -115,6 +140,7 @@ export class AiSettingsFormComponent implements OnInit {
       apiKey: '',
     };
     this.model.update((m) => ({ ...m, providers: [...m.providers, provider] }));
+    this.expandedIds.update((ids) => new Set([...ids, provider.id]));
   }
 
   removeProvider(id: string): void {

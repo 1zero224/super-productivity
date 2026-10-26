@@ -11,15 +11,39 @@
         [class.isDefault]="p.id === model().defaultProviderId"
       >
         <div class="provider-head">
-          <mat-form-field class="name-field">
-            <mat-label>{{ T.F.AI.PROVIDERS.NAME | translate }}</mat-label>
-            <input
-              matInput
-              [name]="'name-' + p.id"
-              [ngModel]="p.name"
-              (ngModelChange)="setProvider(p.id, 'name', $event)"
-            />
-          </mat-form-field>
+          <button
+            type="button"
+            class="provider-summary"
+            [attr.aria-expanded]="expandedIds().has(p.id)"
+            (click)="toggleExpanded(p.id)"
+          >
+            <mat-icon class="expand-icon">{{
+              expandedIds().has(p.id) ? 'expand_more' : 'chevron_right'
+            }}</mat-icon>
+            <span class="summary-text">
+              <span class="summary-name">{{
+                p.name || (T.F.AI.PROVIDERS.UNNAMED | translate)
+              }}</span>
+              <span class="summary-meta">
+                {{
+                  (p.apiType === 'responses'
+                    ? T.F.AI.PROVIDERS.TYPE_RESPONSES
+                    : T.F.AI.PROVIDERS.TYPE_CHAT
+                  ) | translate
+                }}
+                @if (p.model) {
+                  · {{ p.model }}
+                }
+              </span>
+            </span>
+            @if (!isConfigured(p)) {
+              <mat-icon
+                class="summary-warn"
+                [matTooltip]="T.F.AI.PROVIDERS.INCOMPLETE | translate"
+                >error_outline</mat-icon
+              >
+            }
+          </button>
           @if (p.id === model().defaultProviderId) {
             <span class="default-badge">{{ T.F.AI.PROVIDERS.DEFAULT | translate }}</span>
           } @else {
@@ -42,78 +66,92 @@
           </button>
         </div>
 
-        <mat-form-field>
-          <mat-label>{{ T.F.AI.PROVIDERS.API_TYPE | translate }}</mat-label>
-          <mat-select
-            [name]="'apiType-' + p.id"
-            [ngModel]="p.apiType"
-            (ngModelChange)="setProvider(p.id, 'apiType', $event)"
-          >
-            <mat-option value="chat">{{
-              T.F.AI.PROVIDERS.TYPE_CHAT | translate
-            }}</mat-option>
-            <mat-option value="responses">{{
-              T.F.AI.PROVIDERS.TYPE_RESPONSES | translate
-            }}</mat-option>
-          </mat-select>
-        </mat-form-field>
+        @if (expandedIds().has(p.id)) {
+          <div class="provider-body">
+            <mat-form-field>
+              <mat-label>{{ T.F.AI.PROVIDERS.NAME | translate }}</mat-label>
+              <input
+                matInput
+                [name]="'name-' + p.id"
+                [ngModel]="p.name"
+                (ngModelChange)="setProvider(p.id, 'name', $event)"
+              />
+            </mat-form-field>
 
-        <mat-form-field>
-          <mat-label>{{ T.F.AI.SETTINGS.BASE_URL | translate }}</mat-label>
-          <input
-            matInput
-            placeholder="https://api.deepseek.com/v1"
-            [name]="'baseUrl-' + p.id"
-            [ngModel]="p.baseUrl"
-            (ngModelChange)="setProvider(p.id, 'baseUrl', $event)"
-          />
-        </mat-form-field>
+            <mat-form-field>
+              <mat-label>{{ T.F.AI.PROVIDERS.API_TYPE | translate }}</mat-label>
+              <mat-select
+                [name]="'apiType-' + p.id"
+                [ngModel]="p.apiType"
+                (ngModelChange)="setProvider(p.id, 'apiType', $event)"
+              >
+                <mat-option value="chat">{{
+                  T.F.AI.PROVIDERS.TYPE_CHAT | translate
+                }}</mat-option>
+                <mat-option value="responses">{{
+                  T.F.AI.PROVIDERS.TYPE_RESPONSES | translate
+                }}</mat-option>
+              </mat-select>
+            </mat-form-field>
 
-        <mat-form-field>
-          <mat-label>{{ T.F.AI.SETTINGS.MODEL | translate }}</mat-label>
-          <input
-            matInput
-            placeholder="deepseek-chat"
-            [name]="'model-' + p.id"
-            [ngModel]="p.model"
-            (ngModelChange)="setProvider(p.id, 'model', $event)"
-          />
-        </mat-form-field>
+            <mat-form-field>
+              <mat-label>{{ T.F.AI.SETTINGS.BASE_URL | translate }}</mat-label>
+              <input
+                matInput
+                placeholder="https://api.deepseek.com/v1"
+                [name]="'baseUrl-' + p.id"
+                [ngModel]="p.baseUrl"
+                (ngModelChange)="setProvider(p.id, 'baseUrl', $event)"
+              />
+            </mat-form-field>
 
-        <mat-form-field>
-          <mat-label>{{ T.F.AI.SETTINGS.API_KEY | translate }}</mat-label>
-          <input
-            matInput
-            type="password"
-            autocomplete="off"
-            [name]="'apiKey-' + p.id"
-            [ngModel]="p.apiKey"
-            (ngModelChange)="setProvider(p.id, 'apiKey', $event)"
-          />
-          <mat-hint>{{ T.F.AI.SETTINGS.KEY_HINT | translate }}</mat-hint>
-        </mat-form-field>
+            <mat-form-field>
+              <mat-label>{{ T.F.AI.SETTINGS.MODEL | translate }}</mat-label>
+              <input
+                matInput
+                placeholder="deepseek-chat"
+                [name]="'model-' + p.id"
+                [ngModel]="p.model"
+                (ngModelChange)="setProvider(p.id, 'model', $event)"
+              />
+            </mat-form-field>
 
-        <div class="provider-test">
-          <button
-            mat-stroked-button
-            type="button"
-            [disabled]="testStates()[p.id]?.state === 'testing'"
-            (click)="test(p.id)"
-          >
-            {{ T.F.AI.SETTINGS.TEST | translate }}
-          </button>
-          @switch (testStates()[p.id]?.state) {
-            @case ('ok') {
-              <span class="test-ok">
-                <mat-icon>check_circle</mat-icon>
-                {{ T.F.AI.SETTINGS.TEST_OK | translate }}
-              </span>
-            }
-            @case ('fail') {
-              <span class="test-fail">{{ testStates()[p.id]?.error }}</span>
-            }
-          }
-        </div>
+            <mat-form-field>
+              <mat-label>{{ T.F.AI.SETTINGS.API_KEY | translate }}</mat-label>
+              <input
+                matInput
+                type="password"
+                autocomplete="off"
+                [name]="'apiKey-' + p.id"
+                [ngModel]="p.apiKey"
+                (ngModelChange)="setProvider(p.id, 'apiKey', $event)"
+              />
+              <mat-hint>{{ T.F.AI.SETTINGS.KEY_HINT | translate }}</mat-hint>
+            </mat-form-field>
+
+            <div class="provider-test">
+              <button
+                mat-stroked-button
+                type="button"
+                [disabled]="testStates()[p.id]?.state === 'testing'"
+                (click)="test(p.id)"
+              >
+                {{ T.F.AI.SETTINGS.TEST | translate }}
+              </button>
+              @switch (testStates()[p.id]?.state) {
+                @case ('ok') {
+                  <span class="test-ok">
+                    <mat-icon>check_circle</mat-icon>
+                    {{ T.F.AI.SETTINGS.TEST_OK | translate }}
+                  </span>
+                }
+                @case ('fail') {
+                  <span class="test-fail">{{ testStates()[p.id]?.error }}</span>
+                }
+              }
+            </div>
+          </div>
+        }
       </div>
     }
 

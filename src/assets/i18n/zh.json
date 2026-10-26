@@ -261,6 +261,8 @@
       },
       "PROVIDERS": {
         "TITLE": "供应商",
+        "UNNAMED": "新供应商",
+        "INCOMPLETE": "缺少地址、模型或 API Key",
         "NAME": "名称",
         "API_TYPE": "接口类型",
         "TYPE_CHAT": "Chat Completions（OpenAI 兼容）",

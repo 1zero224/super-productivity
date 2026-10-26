@@ -249,6 +249,8 @@
       },
       "PROVIDERS": {
         "TITLE": "Providers",
+        "UNNAMED": "New provider",
+        "INCOMPLETE": "Base URL, model or API key missing",
         "NAME": "Name",
         "API_TYPE": "API type",
         "TYPE_CHAT": "Chat Completions (OpenAI-compatible)",
