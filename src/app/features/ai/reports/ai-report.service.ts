@@ -80,8 +80,8 @@ export const REPORT_CREATE_LIMITS: Record<
   >
 > = {
   daily: { maxCreateTasks: 0 },
-  // The one "future me" step for tomorrow
-  evening: { maxCreateTasks: 1, maxCreateTasksPerGoal: 1 },
+  // Planning, not task creation: the weekly direction is only background here
+  evening: { maxCreateTasks: 0 },
   weekly: {
     maxCreateTasks: MAX_SUGGESTIONS,
     maxCreateTasksPerGoal: MAX_CREATE_TASKS_PER_GOAL,

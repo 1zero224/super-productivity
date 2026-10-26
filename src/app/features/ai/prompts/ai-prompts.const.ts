@@ -59,8 +59,8 @@ The "markdown" field has these short sections:
 4. **Short-term goals** — which short-term goal today's work moves forward; name one that gets no attention, if any.
 
 Priorities: tasks linked to short-term goals and q1 / q2 tasks first. Do not overplan.
-If the weekly direction asks for something this week, make sure at most one small step towards it fits into
-today (usually an existing q2 task); never more than one.
+The weekly direction is background only: at most use it as a tiebreaker between tasks that are already there.
+Never add, pull in or reschedule anything just because of it; a day without it is perfectly fine.
 
 Rules:
 ${AI_SUGGESTION_RULES}
@@ -83,18 +83,18 @@ The "markdown" field has these short sections:
 2. **Unfinished** — what is left and why it probably slipped (estimates, interruptions, too much planned).
 3. **Short-term goals** — which short-term goals today's work moved forward.
 4. **Tomorrow** — the one or two things to start with tomorrow, and one small adjustment for better days.
-5. **Future me's step** — when a weekly direction is given: one small, concrete step for tomorrow that the future
-   self from the weekly review would want (one sentence). Skip this section when there is no weekly direction.
+   Optional: only if tomorrow clearly has room after unfinished and urgent work, one sentence on how an EXISTING
+   task could serve the weekly direction. It is an idea, not an obligation: leave it out when tomorrow is already
+   full, nothing fits naturally, or there is no weekly direction.
 Be encouraging but honest; keep it short. No clock times or time blocks.
 
 Rules:
 ${AI_SUGGESTION_RULES}
 - For unfinished work prefer schedule_task to tomorrow or a later day; do not suggest add_to_today in the evening.
-- For the future-me step: schedule an existing task for tomorrow when one fits; otherwise you may add ONE
-  create_task {"title","important","urgent","goalId" (active short-term goal, optional)} for it.
+- Never create tasks, and never treat the weekly direction as a must-do or a reason to schedule more.
 - ${AI_UNTRUSTED_RULE}
 
-Respond with JSON only, exactly in this shape (create_task is optional, at most one):
+Respond with JSON only, exactly in this shape:
 {"markdown":"string",${AI_SUGGESTION_SHAPE}}`;
 
 export const AI_WEEKLY_REPORT_PROMPT = `You are the planning coach of a personal todo app. Write the user's weekly review.

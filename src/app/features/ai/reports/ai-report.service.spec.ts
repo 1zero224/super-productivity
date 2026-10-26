@@ -165,16 +165,13 @@ describe('parseReportResponse create suggestions', () => {
     ]);
   });
 
-  it('allows a single future-me task in the evening review and nothing in the morning', () => {
-    const evening = parseReportResponse(response, tasks, {
-      goals,
-      ...REPORT_CREATE_LIMITS.evening,
-    });
-    expect(evening.suggestions.map((s) => s.tool)).toEqual(['create_task']);
-    const daily = parseReportResponse(response, tasks, {
-      goals,
-      ...REPORT_CREATE_LIMITS.daily,
-    });
-    expect(daily.suggestions).toEqual([]);
+  it('never creates tasks or goals from the morning or evening plan', () => {
+    for (const type of ['daily', 'evening'] as const) {
+      const res = parseReportResponse(response, tasks, {
+        goals,
+        ...REPORT_CREATE_LIMITS[type],
+      });
+      expect(res.suggestions).toEqual([]);
+    }
   });
 });
