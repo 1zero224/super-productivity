@@ -246,6 +246,25 @@
         "Q2": "Important, not urgent",
         "Q3": "Urgent, not important",
         "Q4": "Not important, not urgent"
+      },
+      "PROVIDERS": {
+        "TITLE": "Providers",
+        "NAME": "Name",
+        "API_TYPE": "API type",
+        "TYPE_CHAT": "Chat Completions (OpenAI-compatible)",
+        "TYPE_RESPONSES": "Responses API (OpenAI)",
+        "DEFAULT": "Default",
+        "MAKE_DEFAULT": "Make default",
+        "ADD": "Add provider",
+        "PICK": "Provider for this chat",
+        "ROUTING": "Provider per feature",
+        "ROUTING_HINT": "Pick which provider each feature uses, e.g. a cheaper model for quadrant tagging.",
+        "F_CHAT": "Chat (default for new conversations)",
+        "F_BREAKDOWN": "Task breakdown",
+        "F_DAILY": "Today's recommendation",
+        "F_EVENING": "Daily review",
+        "F_WEEKLY": "Weekly review",
+        "F_CLASSIFY": "Quadrant tagging"
       }
     },
     "IOS_SHARE": {

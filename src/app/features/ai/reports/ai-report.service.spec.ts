@@ -1,4 +1,4 @@
-import { parseReportResponse } from './ai-report.service';
+import { parseReportResponse, REPORT_CREATE_LIMITS } from './ai-report.service';
 import { DEFAULT_TASK, Task } from '../../tasks/task.model';
 import { AiGoal } from '../goals/ai-goal.model';
 
@@ -108,46 +108,73 @@ describe('parseReportResponse create suggestions', () => {
   });
   const goals = [
     g({ id: 'L', horizon: 'long', title: 'Vision' }),
+    g({ id: 'L2', horizon: 'long', title: 'Second vision' }),
     g({ id: 'M1', horizon: 'mid', title: 'Has short', parentId: 'L' }),
     g({ id: 'M2', horizon: 'mid', title: 'Needs short', parentId: 'L' }),
     g({ id: 'S1', horizon: 'short', title: 'Short', parentId: 'M1' }),
   ];
+  const createTask = (title: string, goalId?: string): object => ({
+    tool: 'create_task',
+    args: { title, important: true, urgent: false, ...(goalId ? { goalId } : {}) },
+  });
   const response = JSON.stringify({
     markdown: 'w',
     suggestions: [
-      ...Array.from({ length: 7 }, (_, i) => ({
-        tool: 'create_task',
-        args: {
-          title: `Task ${i}`,
-          important: true,
-          urgent: false,
-          goalId: i ? 'S1' : 'M1',
-        },
-      })),
+      ...['a', 'b', 'c', 'd'].map((t) => createTask(`S1 ${t}`, 'S1')),
+      // A mid-term goal id is not a valid task goal: counts as "no goal"
+      createTask('No goal 1', 'M1'),
+      createTask('No goal 2'),
       { tool: 'create_goal', args: { title: 'Again under M1', parentId: 'M1' } },
-      { tool: 'create_goal', args: { title: 'Under long', parentId: 'L' } },
-      { tool: 'create_goal', args: { title: 'Under M2', parentId: 'M2' } },
-      { tool: 'create_goal', args: { title: 'Second under M2', parentId: 'M2' } },
+      { tool: 'create_goal', args: { title: 'Under L (has mids)', parentId: 'L' } },
+      { tool: 'create_goal', args: { title: 'Short under M2', parentId: 'M2' } },
+      { tool: 'create_goal', args: { title: 'Mid under L2', parentId: 'L2' } },
+      { tool: 'create_goal', args: { title: 'Second mid', parentId: 'L2' } },
     ],
   });
 
-  it('accepts at most 5 tasks and links only to active short-term goals', () => {
-    const res = parseReportResponse(response, tasks, { goals, isCreateAllowed: true });
+  it('caps new tasks per short-term goal in the weekly review', () => {
+    const res = parseReportResponse(response, tasks, {
+      goals,
+      ...REPORT_CREATE_LIMITS.weekly,
+    });
     const created = res.suggestions.filter((s) => s.tool === 'create_task');
-    expect(created.length).toBe(5);
-    expect(created[0].args).toEqual({ title: 'Task 0', important: true, urgent: false });
-    expect(created[1].args['goalId']).toBe('S1');
-    expect(created[1].detail).toBe('Q2 · Short');
+    expect(created.map((s) => s.taskTitle)).toEqual([
+      'S1 a',
+      'S1 b',
+      'S1 c',
+      'No goal 1',
+      'No goal 2',
+    ]);
+    expect(created[0].detail).toBe('Q2 · Short');
+    expect(created[3].args).toEqual({
+      title: 'No goal 1',
+      important: true,
+      urgent: false,
+    });
   });
 
-  it('accepts one new short-term goal, only under a mid-term goal without one', () => {
-    const res = parseReportResponse(response, tasks, { goals, isCreateAllowed: true });
+  it('fills one gap per level: short under mid, mid under long', () => {
+    const res = parseReportResponse(response, tasks, {
+      goals,
+      ...REPORT_CREATE_LIMITS.weekly,
+    });
     const newGoals = res.suggestions.filter((s) => s.tool === 'create_goal');
-    expect(newGoals.map((s) => s.args['parentId'])).toEqual(['M2']);
+    expect(newGoals.map((s) => [s.args['parentId'], s.args['horizon']])).toEqual([
+      ['M2', 'short'],
+      ['L2', 'mid'],
+    ]);
   });
 
-  it('ignores create suggestions outside the weekly review', () => {
-    const res = parseReportResponse(response, tasks, { goals });
-    expect(res.suggestions).toEqual([]);
+  it('allows a single future-me task in the evening review and nothing in the morning', () => {
+    const evening = parseReportResponse(response, tasks, {
+      goals,
+      ...REPORT_CREATE_LIMITS.evening,
+    });
+    expect(evening.suggestions.map((s) => s.tool)).toEqual(['create_task']);
+    const daily = parseReportResponse(response, tasks, {
+      goals,
+      ...REPORT_CREATE_LIMITS.daily,
+    });
+    expect(daily.suggestions).toEqual([]);
   });
 });

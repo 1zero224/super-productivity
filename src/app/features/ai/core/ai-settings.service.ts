@@ -1,14 +1,20 @@
 import { computed, Injectable, signal } from '@angular/core';
 import {
+  AI_FEATURES,
+  AiFeature,
+  AiProvider,
   AiSettings,
   DEFAULT_AI_AUTOMATION_SETTINGS,
+  DEFAULT_AI_PROVIDER,
   DEFAULT_AI_SETTINGS,
+  isProviderConfigured,
+  resolveProvider,
 } from './ai-client.model';
 import { getAiKv, setAiKv } from './ai-db';
 import { Log } from '../../../core/log';
 
 /**
- * Device-local AI settings (endpoint, model, API key, automation).
+ * Device-local AI settings (providers, feature routing, automation).
  *
  * Lives in the `sup-ai` IndexedDB database, outside op-log sync, exports and
  * backups — like the plugin secret store. The key is plaintext at rest.
@@ -19,12 +25,78 @@ const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 const AiLog = Log.withContext('ai');
 
-export const normalizeAiSettings = (raw: Partial<AiSettings> | undefined): AiSettings => {
-  const a = { ...DEFAULT_AI_AUTOMATION_SETTINGS, ...(raw?.automation || {}) };
+// Settings stored before providers existed held a single endpoint
+interface LegacyAiSettings {
+  baseUrl?: string;
+  model?: string;
+  apiKey?: string;
+}
+
+const hostName = (url: string): string => {
+  try {
+    return new URL(url).hostname.replace(/^api./, '') || 'AI';
+  } catch {
+    return 'AI';
+  }
+};
+
+const normalizeProvider = (raw: Partial<AiProvider>, index: number): AiProvider => {
+  const baseUrl = (raw.baseUrl ?? '').trim();
   return {
-    baseUrl: (raw?.baseUrl ?? DEFAULT_AI_SETTINGS.baseUrl).trim(),
-    model: (raw?.model ?? DEFAULT_AI_SETTINGS.model).trim(),
-    apiKey: (raw?.apiKey ?? DEFAULT_AI_SETTINGS.apiKey).trim(),
+    id: (raw.id ?? '').trim() || `provider-${index + 1}`,
+    name: (raw.name ?? '').trim() || hostName(baseUrl),
+    apiType: raw.apiType === 'responses' ? 'responses' : 'chat',
+    baseUrl,
+    model: (raw.model ?? '').trim(),
+    apiKey: (raw.apiKey ?? '').trim(),
+  };
+};
+
+export const normalizeAiSettings = (
+  raw: (Partial<AiSettings> & LegacyAiSettings) | undefined,
+): AiSettings => {
+  const a = { ...DEFAULT_AI_AUTOMATION_SETTINGS, ...(raw?.automation || {}) };
+  let providers: AiProvider[];
+  if (Array.isArray(raw?.providers) && raw!.providers.length) {
+    providers = raw!.providers.map(normalizeProvider);
+  } else if (raw?.baseUrl !== undefined || raw?.apiKey !== undefined) {
+    // Migrate the single pre-provider endpoint
+    providers = [
+      normalizeProvider(
+        {
+          id: DEFAULT_AI_PROVIDER.id,
+          baseUrl: raw.baseUrl ?? DEFAULT_AI_PROVIDER.baseUrl,
+          model: raw.model ?? DEFAULT_AI_PROVIDER.model,
+          apiKey: raw.apiKey ?? '',
+        },
+        0,
+      ),
+    ];
+  } else {
+    providers = [{ ...DEFAULT_AI_PROVIDER }];
+  }
+  // Ids must be unique for routing
+  const seen = new Set<string>();
+  providers = providers.map((p, i) => {
+    const id = seen.has(p.id) ? `${p.id}-${i + 1}` : p.id;
+    seen.add(id);
+    return { ...p, id };
+  });
+  const ids = new Set(providers.map((p) => p.id));
+  const featureProviders: Partial<Record<AiFeature, string>> = {};
+  for (const f of AI_FEATURES) {
+    const id = raw?.featureProviders?.[f];
+    if (id && ids.has(id)) {
+      featureProviders[f] = id;
+    }
+  }
+  return {
+    providers,
+    defaultProviderId:
+      raw?.defaultProviderId && ids.has(raw.defaultProviderId)
+        ? raw.defaultProviderId
+        : providers[0].id,
+    featureProviders,
     automation: {
       isDailyEnabled: !!a.isDailyEnabled,
       dailyTime: TIME_RE.test(a.dailyTime)
@@ -54,16 +126,21 @@ export class AiSettingsService {
   private _loadPromise?: Promise<AiSettings>;
 
   readonly settings = this._settings.asReadonly();
-  readonly isConfigured = computed(() => {
-    const s = this._settings();
-    return !!s.baseUrl.trim() && !!s.model.trim() && !!s.apiKey.trim();
-  });
+  // The default provider is usable (local endpoints may run without a key)
+  readonly isConfigured = computed(() =>
+    isProviderConfigured(resolveProvider(this._settings())),
+  );
+  readonly configuredProviders = computed(() =>
+    this._settings().providers.filter(isProviderConfigured),
+  );
 
   load(): Promise<AiSettings> {
     if (!this._loadPromise) {
       this._loadPromise = (async () => {
         try {
-          const stored = await getAiKv<Partial<AiSettings>>(SETTINGS_KEY);
+          const stored = await getAiKv<Partial<AiSettings> & LegacyAiSettings>(
+            SETTINGS_KEY,
+          );
           const merged = normalizeAiSettings(stored);
           this._settings.set(merged);
           return merged;

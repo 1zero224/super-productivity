@@ -245,3 +245,21 @@
     transform: rotate(360deg);
   }
 }
+
+.provider-bar {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--s-half) var(--s2) 0;
+  border-top: 1px solid var(--separator-color);
+}
+
+.provider-select {
+  width: auto;
+  max-width: 100%;
+  font-size: var(--font-size-sm);
+  color: var(--text-color-muted);
+}
+
+.provider-bar + .composer {
+  border-top: 0;
+}

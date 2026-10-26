@@ -19,6 +19,8 @@ import { T } from '../../../../t.const';
 import { AiPanelStateService } from '../../ai-panel-state.service';
 import { AiChatItem } from '../../ai-chat.model';
 import { AiSettingsService } from '../../core/ai-settings.service';
+import { resolveProvider } from '../../core/ai-client.model';
+import { MatOption, MatSelect } from '@angular/material/select';
 
 type AiToolItem = Extract<AiChatItem, { kind: 'tool' }>;
 type AiChatViewItem =
@@ -66,6 +68,8 @@ export const summarizeToolArgs = (item: Pick<AiToolItem, 'name' | 'args'>): stri
     MatTooltip,
     TranslatePipe,
     MarkdownComponent,
+    MatSelect,
+    MatOption,
   ],
   templateUrl: './ai-chat.component.html',
   styleUrl: './ai-chat.component.scss',
@@ -79,6 +83,11 @@ export class AiChatComponent {
 
   protected readonly T = T;
   readonly isConfigured = this._settingsService.isConfigured;
+  readonly providers = this._settingsService.configuredProviders;
+  // Shown on the "default" option: the provider the chat feature routes to
+  readonly chatDefaultProvider = computed(() =>
+    resolveProvider(this._settingsService.settings(), undefined, 'chat'),
+  );
   readonly draft = signal('');
 
   // Pre-rendered argument lines so the template stays free of function calls

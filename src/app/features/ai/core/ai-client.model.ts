@@ -33,6 +33,10 @@ export interface AiChatRequest {
   signal?: AbortSignal;
   // When set, the request is streamed and every content chunk is passed here.
   onTextDelta?: (delta: string) => void;
+  // Explicit provider (e.g. picked in the chat); wins over the feature routing
+  providerId?: string;
+  // Which feature asks; selects the provider configured for it
+  feature?: AiFeature;
 }
 
 export interface AiChatResult {
@@ -58,10 +62,40 @@ export interface AiAutomationSettings {
   isAutoQuadrant: boolean;
 }
 
-export interface AiSettings {
+// chat = /chat/completions (OpenAI-compatible), responses = OpenAI Responses API
+export type AiApiType = 'chat' | 'responses';
+
+export interface AiProvider {
+  id: string;
+  name: string;
+  apiType: AiApiType;
   baseUrl: string;
   model: string;
+  // Optional for local endpoints such as Ollama
   apiKey: string;
+}
+
+export type AiFeature =
+  | 'chat'
+  | 'breakdown'
+  | 'daily'
+  | 'evening'
+  | 'weekly'
+  | 'classify';
+export const AI_FEATURES: AiFeature[] = [
+  'chat',
+  'breakdown',
+  'daily',
+  'evening',
+  'weekly',
+  'classify',
+];
+
+export interface AiSettings {
+  providers: AiProvider[];
+  defaultProviderId: string;
+  // Missing entry = default provider
+  featureProviders: Partial<Record<AiFeature, string>>;
   automation: AiAutomationSettings;
 }
 
@@ -77,9 +111,43 @@ export const DEFAULT_AI_AUTOMATION_SETTINGS: AiAutomationSettings = {
   isAutoQuadrant: true,
 };
 
-export const DEFAULT_AI_SETTINGS: AiSettings = {
+export const DEFAULT_AI_PROVIDER: AiProvider = {
+  id: 'default',
+  name: 'OpenAI',
+  apiType: 'chat',
   baseUrl: 'https://api.openai.com/v1',
   model: 'gpt-4o-mini',
   apiKey: '',
+};
+
+export const DEFAULT_AI_SETTINGS: AiSettings = {
+  providers: [DEFAULT_AI_PROVIDER],
+  defaultProviderId: DEFAULT_AI_PROVIDER.id,
+  featureProviders: {},
   automation: DEFAULT_AI_AUTOMATION_SETTINGS,
+};
+
+const LOCAL_HOST_RE = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?(\/|$)/i;
+
+/** Needs an endpoint and a model, plus a key unless it is a local endpoint (Ollama…). */
+export const isProviderConfigured = (p: AiProvider | undefined): boolean =>
+  !!p &&
+  !!p.baseUrl.trim() &&
+  !!p.model.trim() &&
+  (!!p.apiKey.trim() || LOCAL_HOST_RE.test(p.baseUrl.trim()));
+
+/** Explicit provider → feature routing → default provider → first one. */
+export const resolveProvider = (
+  settings: AiSettings,
+  providerId?: string,
+  feature?: AiFeature,
+): AiProvider | undefined => {
+  const byId = (id?: string): AiProvider | undefined =>
+    id ? settings.providers.find((p) => p.id === id) : undefined;
+  return (
+    byId(providerId) ??
+    byId(feature && settings.featureProviders[feature]) ??
+    byId(settings.defaultProviderId) ??
+    settings.providers[0]
+  );
 };

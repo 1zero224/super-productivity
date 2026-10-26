@@ -27,4 +27,6 @@ export interface AiConversation {
   items: AiChatItem[];
   // The agent transcript, so a conversation can be continued
   messages: AiMessage[];
+  // Provider picked for this chat; missing = the chat feature's provider
+  providerId?: string | null;
 }

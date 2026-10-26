@@ -37,9 +37,11 @@ import { isValidSplitTime } from '../../../util/is-valid-split-time';
 import { Log } from '../../../core/log';
 
 const AiLog = Log.withContext('ai');
-const MAX_SUGGESTIONS = 10;
-const MAX_CREATE_TASKS = 5;
-const MAX_CREATE_GOALS = 1;
+const MAX_SUGGESTIONS = 12;
+// Weekly review: new tasks per short-term goal (and per "no goal" bucket)
+export const MAX_CREATE_TASKS_PER_GOAL = 3;
+const MAX_FUTURE_REPORT_AGE_DAYS = 14;
+const DAY_MS = 24 * 60 * 60 * 1000;
 const MAX_WEEKLY_MEMORIES = 3;
 const MAX_STORED_REPORTS = 60;
 const MAX_REASON_CHARS = 200;
@@ -61,9 +63,32 @@ export interface ParsedReport {
 
 export interface ParseReportOptions {
   goals?: AiGoal[];
-  // Allow create_task / create_goal (weekly review only)
-  isCreateAllowed?: boolean;
+  // create_task limit: total for the report (0 = not allowed)
+  maxCreateTasks?: number;
+  // create_task limit per short-term goal
+  maxCreateTasksPerGoal?: number;
+  // create_goal (weekly review only): one short- and one mid-term goal at most
+  isCreateGoalAllowed?: boolean;
 }
+
+/** What each report type may create. */
+export const REPORT_CREATE_LIMITS: Record<
+  AiReportType,
+  Pick<
+    ParseReportOptions,
+    'maxCreateTasks' | 'maxCreateTasksPerGoal' | 'isCreateGoalAllowed'
+  >
+> = {
+  daily: { maxCreateTasks: 0 },
+  // The one "future me" step for tomorrow
+  evening: { maxCreateTasks: 1, maxCreateTasksPerGoal: 1 },
+  weekly: {
+    maxCreateTasks: MAX_SUGGESTIONS,
+    maxCreateTasksPerGoal: MAX_CREATE_TASKS_PER_GOAL,
+    isCreateGoalAllowed: true,
+  },
+  classify: { maxCreateTasks: 0 },
+};
 
 const isTaskOpen = (t: Task | undefined): t is Task => !!t && !t.isDone;
 
@@ -107,27 +132,34 @@ const validateTaskArgs = (
   }
 };
 
-/** Mid-term goals that have no active short-term goal yet. */
-const midGoalsWithoutShort = (goals: AiGoal[]): Set<string> => {
+/** Active goals of `horizon` without an active child goal one level down. */
+const goalsWithoutChild = (goals: AiGoal[], horizon: 'long' | 'mid'): Set<string> => {
   const active = goals.filter((g) => g.status === 'active');
-  const withShort = new Set(
-    active.filter((g) => g.horizon === 'short' && g.parentId).map((g) => g.parentId),
+  const childHorizon = horizon === 'long' ? 'mid' : 'short';
+  const withChild = new Set(
+    active.filter((g) => g.horizon === childHorizon && g.parentId).map((g) => g.parentId),
   );
   return new Set(
-    active.filter((g) => g.horizon === 'mid' && !withShort.has(g.id)).map((g) => g.id),
+    active.filter((g) => g.horizon === horizon && !withChild.has(g.id)).map((g) => g.id),
   );
 };
 
 /**
  * Parses a report response. Suggestions are whitelisted: unknown tools, task
  * ids that do not exist (or are done) and malformed args are dropped.
- * create_task / create_goal are only accepted with `isCreateAllowed`; a new
- * goal must be short-term under a mid-term goal that has none yet.
+ * create_task is capped per report and per short-term goal; create_goal only
+ * fills a gap in the tree: a short-term goal under a mid-term goal without
+ * one, or a mid-term goal under a long-term goal without one.
  */
 export const parseReportResponse = (
   text: string,
   tasks: Record<string, Task | undefined>,
-  { goals = [], isCreateAllowed = false }: ParseReportOptions = {},
+  {
+    goals = [],
+    maxCreateTasks = 0,
+    maxCreateTasksPerGoal = MAX_CREATE_TASKS_PER_GOAL,
+    isCreateGoalAllowed = false,
+  }: ParseReportOptions = {},
 ): ParsedReport => {
   const json = (extractJsonObject(text) || {}) as {
     markdown?: unknown;
@@ -142,9 +174,13 @@ export const parseReportResponse = (
       .filter((g) => g.horizon === 'short' && g.status === 'active')
       .map((g) => [g.id, g]),
   );
-  const openMidGoals = midGoalsWithoutShort(goals);
+  const openParents = {
+    mid: goalsWithoutChild(goals, 'mid'),
+    long: goalsWithoutChild(goals, 'long'),
+  };
+  const createdGoalHorizons = new Set<string>();
+  const tasksPerGoal = new Map<string, number>();
   let createdTasks = 0;
-  let createdGoals = 0;
 
   for (const rawItem of Array.isArray(json.suggestions) ? json.suggestions : []) {
     if (suggestions.length >= MAX_SUGGESTIONS) break;
@@ -173,17 +209,21 @@ export const parseReportResponse = (
       continue;
     }
 
-    if (!isCreateAllowed || !AI_CREATE_SUGGESTION_TOOLS.includes(tool)) continue;
+    if (!AI_CREATE_SUGGESTION_TOOLS.includes(tool)) continue;
     const title = str(rawArgs.title, MAX_TITLE_CHARS);
     const key = `${tool}:${title.toLowerCase()}`;
     if (!title || seen.has(key)) continue;
 
     if (tool === 'create_task') {
-      if (createdTasks >= MAX_CREATE_TASKS) continue;
+      if (createdTasks >= maxCreateTasks) continue;
       const goal =
         typeof rawArgs.goalId === 'string'
           ? activeShortGoals.get(rawArgs.goalId)
           : undefined;
+      const bucket = goal?.id ?? '';
+      const inBucket = tasksPerGoal.get(bucket) ?? 0;
+      if (inBucket >= maxCreateTasksPerGoal) continue;
+      tasksPerGoal.set(bucket, inBucket + 1);
       const important = rawArgs.important === true;
       const urgent = rawArgs.urgent === true;
       const est = Number(rawArgs.estimateMinutes);
@@ -207,12 +247,20 @@ export const parseReportResponse = (
         state: 'open',
       });
     } else {
+      if (!isCreateGoalAllowed) continue;
       const parentId = typeof rawArgs.parentId === 'string' ? rawArgs.parentId : '';
-      if (createdGoals >= MAX_CREATE_GOALS || !openMidGoals.has(parentId)) continue;
+      const parentHorizon = openParents.mid.has(parentId)
+        ? 'mid'
+        : openParents.long.has(parentId)
+          ? 'long'
+          : null;
+      if (!parentHorizon) continue;
+      const horizon = parentHorizon === 'mid' ? 'short' : 'mid';
+      if (createdGoalHorizons.has(horizon)) continue;
       const parent = goals.find((g) => g.id === parentId)!;
       seen.add(key);
-      createdGoals++;
-      openMidGoals.delete(parentId);
+      createdGoalHorizons.add(horizon);
+      openParents[parentHorizon].delete(parentId);
       suggestions.push({
         uid: nanoid(),
         tool,
@@ -220,6 +268,7 @@ export const parseReportResponse = (
           title,
           description: str(rawArgs.description, 1000),
           parentId,
+          horizon,
         },
         taskTitle: title,
         detail: `↳ ${parent.title}`,
@@ -370,11 +419,12 @@ export class AiReportService {
         },
       ],
       temperature: 0.5,
+      feature: type,
     });
     const freshEntities = await firstValueFrom(this._store.select(selectTaskEntities));
     return parseReportResponse(content, freshEntities, {
       goals: this._goals.goals(),
-      isCreateAllowed: isWeekly,
+      ...REPORT_CREATE_LIMITS[type],
     });
   }
 
@@ -461,13 +511,17 @@ export class AiReportService {
   ): Promise<object> {
     switch (type) {
       case 'daily':
-        return this._data.collectDaily(key);
+        return {
+          ...(await this._data.collectDaily(key)),
+          weeklyDirection: this._latestWeeklyDirection(),
+        };
       case 'evening': {
         const morning = this._reports().find(
           (r) => r.type === 'daily' && r.periodKey === key,
         );
         return {
           ...(await this._data.collectEvening(key)),
+          weeklyDirection: this._latestWeeklyDirection(),
           // The model's own earlier output, so the review can compare
           morningPlan: morning ? morning.markdown.slice(0, MAX_MORNING_PLAN_CHARS) : null,
         };
@@ -478,6 +532,15 @@ export class AiReportService {
           openTasks: await this._tools.listTasks('all_undone', MAX_OPEN_TASKS_WEEKLY),
         };
     }
+  }
+
+  /** The latest weekly review (if recent) — its "future me" part guides the days. */
+  private _latestWeeklyDirection(): string | null {
+    const weekly = this.reports().find((r) => r.type === 'weekly');
+    if (!weekly || Date.now() - weekly.created > MAX_FUTURE_REPORT_AGE_DAYS * DAY_MS) {
+      return null;
+    }
+    return weekly.markdown.slice(0, MAX_MORNING_PLAN_CHARS);
   }
 
   private async _execute(s: AiSuggestion): Promise<void> {
@@ -514,7 +577,7 @@ export class AiReportService {
       }
       case 'create_goal':
         await this._goals.add({
-          horizon: 'short',
+          horizon: s.args.horizon === 'mid' ? 'mid' : 'short',
           title: s.args.title as string,
           description: (s.args.description as string) || '',
           parentId: s.args.parentId as string,

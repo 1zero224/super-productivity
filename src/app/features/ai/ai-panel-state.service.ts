@@ -81,6 +81,8 @@ export class AiPanelStateService {
   readonly isAdopting = signal(false);
   readonly panelView = signal<AiPanelView>('chat');
   readonly conversationId = signal<string>(nanoid());
+  // Provider picked in the chat; null = the one configured for the chat feature
+  readonly chatProviderId = signal<string | null>(null);
 
   private _breakdownAbort: AbortController | null = null;
   private readonly _pendingConfirms = new Map<string, (isOk: boolean) => void>();
@@ -88,7 +90,12 @@ export class AiPanelStateService {
   private readonly _onRunDone: (() => void)[] = [];
 
   private readonly _agent = new AiAgent({
-    chat: (req) => this._client.chat(req),
+    chat: (req) =>
+      this._client.chat({
+        ...req,
+        feature: 'chat',
+        providerId: this.chatProviderId() ?? undefined,
+      }),
     getSystemPrompt: () =>
       `${AI_ASSISTANT_SYSTEM_PROMPT}\n- ${this._context.buildLanguageRule(true)}\n\n## Current context\n${this._context.buildContextBlock(
         this.breakdown()?.taskId,
@@ -124,6 +131,7 @@ export class AiPanelStateService {
     this._agent.reset();
     this.chatItems.set([]);
     this.conversationId.set(nanoid());
+    this.chatProviderId.set(null);
   }
 
   async openConversation(id: string): Promise<void> {
@@ -135,6 +143,7 @@ export class AiPanelStateService {
     this._agent.load(conversation.messages);
     this.chatItems.set(conversation.items);
     this.conversationId.set(id);
+    this.chatProviderId.set(conversation.providerId ?? null);
     this.panelView.set('chat');
   }
 
@@ -200,6 +209,7 @@ export class AiPanelStateService {
         messages,
         temperature: 0.4,
         signal: ctrl.signal,
+        feature: 'breakdown',
       });
       const items = parseBreakdownResponse(content);
       if (!items.length) {
@@ -397,7 +407,12 @@ export class AiPanelStateService {
 
   private _persistConversation(): void {
     this._conversations
-      .save(this.conversationId(), this.chatItems(), this._agent.messages)
+      .save(
+        this.conversationId(),
+        this.chatItems(),
+        this._agent.messages,
+        this.chatProviderId(),
+      )
       .catch((e) => AiLog.err('Failed to save conversation', e));
   }
 

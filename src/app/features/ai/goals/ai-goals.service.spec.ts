@@ -74,6 +74,9 @@ describe('goal helpers', () => {
     // A mid-term goal without a short-term goal is flagged for the weekly review
     expect(lines[idx('id=M2') + 1]).toContain('(no active short-term goal yet)');
     expect(block).not.toContain('Old');
+    expect(buildGoalsBlock([goal({ id: 'L9', horizon: 'long' })])).toContain(
+      '(no active mid-term goal yet)',
+    );
     expect(block).toContain('<untrusted_user_content>Live in Japan');
   });
 

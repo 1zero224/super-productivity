@@ -117,8 +117,11 @@ export const buildGoalsBlock = (
       g.horizon === 'long' ? 'mid' : g.horizon === 'mid' ? 'short' : null;
     if (childHorizon) {
       const children = childrenOf(g.id, childHorizon);
-      if (!children.length && g.horizon === 'mid') {
-        lines.push(`${pad}  (no active short-term goal yet)`);
+      // Gaps are where the weekly review may propose one new sub-goal
+      if (!children.length) {
+        lines.push(
+          `${pad}  (no active ${g.horizon === 'long' ? 'mid' : 'short'}-term goal yet)`,
+        );
       }
       children.forEach((c) => walk(c, depth + 1));
     }

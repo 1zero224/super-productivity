@@ -54,7 +54,12 @@ export class AiConversationService {
     return this._conversations().find((c) => c.id === id);
   }
 
-  async save(id: string, items: AiChatItem[], messages: AiMessage[]): Promise<void> {
+  async save(
+    id: string,
+    items: AiChatItem[],
+    messages: AiMessage[],
+    providerId: string | null = null,
+  ): Promise<void> {
     await this.load();
     if (!items.length) {
       return;
@@ -69,6 +74,7 @@ export class AiConversationService {
       updated: now,
       items: settled,
       messages: [...messages],
+      providerId,
     };
     await this._db.put(conversation);
     this._conversations.update((list) => [

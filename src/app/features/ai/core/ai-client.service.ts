@@ -1,7 +1,21 @@
 import { inject, Injectable } from '@angular/core';
-import { AiChatRequest, AiChatResult, AiSettings } from './ai-client.model';
+import {
+  AiChatRequest,
+  AiChatResult,
+  AiProvider,
+  isProviderConfigured,
+  resolveProvider,
+} from './ai-client.model';
 import { AiSettingsService } from './ai-settings.service';
 import { AiStreamAccumulator, readSseData } from './ai-stream.util';
+import {
+  buildResponsesUrl,
+  parseResponsesOutput,
+  ResponsesResponse,
+  ResponsesStreamAccumulator,
+  toResponsesInput,
+  toResponsesTools,
+} from './ai-responses.util';
 
 const REQUEST_TIMEOUT_MS = 120_000;
 
@@ -20,9 +34,43 @@ export const buildChatCompletionsUrl = (baseUrl: string): string => {
   return trimmed.endsWith('/chat/completions') ? trimmed : `${trimmed}/chat/completions`;
 };
 
+/** Request body for the provider's API type. */
+export const buildRequestBody = (
+  provider: AiProvider,
+  req: AiChatRequest,
+  isWithTemperature = true,
+): Record<string, unknown> => {
+  const isStream = !!req.onTextDelta;
+  const temperature =
+    isWithTemperature && typeof req.temperature === 'number'
+      ? { temperature: req.temperature }
+      : {};
+  if (provider.apiType === 'responses') {
+    return {
+      model: provider.model,
+      ...toResponsesInput(req.messages),
+      stream: isStream,
+      // Nothing is kept server side; every request carries the full history
+      store: false,
+      ...(req.tools?.length ? { tools: toResponsesTools(req.tools) } : {}),
+      ...(req.isJsonResponse ? { text: { format: { type: 'json_object' } } } : {}),
+      ...temperature,
+    };
+  }
+  return {
+    model: provider.model,
+    messages: req.messages,
+    stream: isStream,
+    ...(req.tools?.length ? { tools: req.tools } : {}),
+    ...(req.isJsonResponse ? { response_format: { type: 'json_object' } } : {}),
+    ...temperature,
+  };
+};
+
 /**
- * Minimal OpenAI-compatible chat client (DeepSeek, Qwen, Kimi, OpenRouter,
- * Ollama, OpenAI…). Desktop-only: Electron strips CORS for renderer fetches.
+ * Minimal multi-provider chat client: OpenAI-compatible Chat Completions
+ * (DeepSeek, Qwen, Kimi, OpenRouter, Ollama, OpenAI…) and the OpenAI Responses
+ * API. Desktop-only: Electron strips CORS for renderer fetches.
  */
 @Injectable({ providedIn: 'root' })
 export class AiClientService {
@@ -30,12 +78,16 @@ export class AiClientService {
 
   async chat(req: AiChatRequest): Promise<AiChatResult> {
     const settings = await this._settingsService.load();
-    return this.chatWithSettings(settings, req);
+    const provider = resolveProvider(settings, req.providerId, req.feature);
+    if (!provider) {
+      throw new AiRequestError('AI is not configured');
+    }
+    return this.chatWithProvider(provider, req);
   }
 
   /**
    * Non-streamed request in JSON mode, returning the raw content. Some
-   * OpenAI-compatible providers reject `response_format`; retries plain then.
+   * providers reject the JSON mode parameter; retries plain then.
    */
   async chatJson(
     req: Omit<AiChatRequest, 'isJsonResponse' | 'onTextDelta'>,
@@ -50,28 +102,37 @@ export class AiClientService {
     }
   }
 
-  async chatWithSettings(
-    settings: AiSettings,
+  async chatWithProvider(
+    provider: AiProvider,
     req: AiChatRequest,
   ): Promise<AiChatResult> {
-    if (!settings.apiKey || !settings.baseUrl || !settings.model) {
+    if (!isProviderConfigured(provider)) {
       throw new AiRequestError('AI is not configured');
     }
+    try {
+      return await this._send(provider, req, true);
+    } catch (e) {
+      // Reasoning models (o-series, gpt-5…) reject a custom temperature
+      if (
+        e instanceof AiRequestError &&
+        e.status === 400 &&
+        typeof req.temperature === 'number' &&
+        /temperature/i.test(e.message)
+      ) {
+        return this._send(provider, req, false);
+      }
+      throw e;
+    }
+  }
+
+  private async _send(
+    provider: AiProvider,
+    req: AiChatRequest,
+    isWithTemperature: boolean,
+  ): Promise<AiChatResult> {
+    const isResponses = provider.apiType === 'responses';
     const isStream = !!req.onTextDelta;
-    const body: Record<string, unknown> = {
-      model: settings.model,
-      messages: req.messages,
-      stream: isStream,
-    };
-    if (req.tools?.length) {
-      body.tools = req.tools;
-    }
-    if (req.isJsonResponse) {
-      body.response_format = { type: 'json_object' };
-    }
-    if (typeof req.temperature === 'number') {
-      body.temperature = req.temperature;
-    }
+    const body = buildRequestBody(provider, req, isWithTemperature);
 
     const timeoutSignal = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
     const signal = req.signal
@@ -80,16 +141,18 @@ export class AiClientService {
 
     const headers = new Headers();
     headers.set('Content-Type', 'application/json');
-    headers.set('Authorization', `Bearer ${settings.apiKey}`);
+    if (provider.apiKey) {
+      headers.set('Authorization', `Bearer ${provider.apiKey}`);
+    }
 
     let res: Response;
     try {
-      res = await fetch(buildChatCompletionsUrl(settings.baseUrl), {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(body),
-        signal,
-      });
+      res = await fetch(
+        isResponses
+          ? buildResponsesUrl(provider.baseUrl)
+          : buildChatCompletionsUrl(provider.baseUrl),
+        { method: 'POST', headers, body: JSON.stringify(body), signal },
+      );
     } catch (e) {
       if (req.signal?.aborted) {
         throw e;
@@ -109,6 +172,9 @@ export class AiClientService {
     }
 
     if (!isStream || !res.body) {
+      if (isResponses) {
+        return parseResponsesOutput((await res.json()) as ResponsesResponse);
+      }
       const json = (await res.json()) as {
         choices?: {
           message?: { content?: string | null; tool_calls?: AiChatResult['toolCalls'] };
@@ -123,15 +189,22 @@ export class AiClientService {
       };
     }
 
-    const acc = new AiStreamAccumulator();
+    // Both accumulators take a parsed SSE chunk and return its text delta
+    const acc: { push: (chunk: never) => string; result: () => AiChatResult } =
+      isResponses ? new ResponsesStreamAccumulator() : new AiStreamAccumulator();
     for await (const data of readSseData(res.body)) {
-      let chunk: Parameters<AiStreamAccumulator['push']>[0];
+      let chunk: never;
       try {
-        chunk = JSON.parse(data);
+        chunk = JSON.parse(data) as never;
       } catch {
         continue;
       }
-      const delta = acc.push(chunk);
+      let delta: string;
+      try {
+        delta = acc.push(chunk);
+      } catch (e) {
+        throw new AiRequestError((e as Error).message);
+      }
       if (delta) {
         req.onTextDelta?.(delta);
       }

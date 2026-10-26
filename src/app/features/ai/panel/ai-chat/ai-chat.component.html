@@ -117,6 +117,25 @@
   </div>
 </div>
 
+@if (providers().length > 1) {
+  <div class="provider-bar">
+    <mat-select
+      class="provider-select"
+      panelWidth="auto"
+      [attr.aria-label]="T.F.AI.PROVIDERS.PICK | translate"
+      [value]="state.chatProviderId() ?? ''"
+      (valueChange)="state.chatProviderId.set($event || null)"
+    >
+      <mat-option value="">
+        {{ T.F.AI.PROVIDERS.DEFAULT | translate }} · {{ chatDefaultProvider()?.name }}
+      </mat-option>
+      @for (p of providers(); track p.id) {
+        <mat-option [value]="p.id">{{ p.name }} · {{ p.model }}</mat-option>
+      }
+    </mat-select>
+  </div>
+}
+
 <footer class="composer">
   <textarea
     class="composer-input"

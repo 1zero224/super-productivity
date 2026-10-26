@@ -49,3 +49,74 @@
   font-size: var(--font-size-sm);
   color: var(--text-color-muted);
 }
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s);
+  margin: 0;
+  padding: var(--s) var(--s2);
+  border: 1px solid var(--separator-color);
+  border-radius: var(--card-border-radius);
+
+  legend {
+    padding: 0 var(--s-half);
+    font-weight: var(--font-weight-semibold);
+  }
+}
+
+.provider {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-half);
+  padding: var(--s) var(--s2);
+  border: 1px solid var(--separator-color);
+  border-radius: var(--card-border-radius);
+
+  &.isDefault {
+    border-color: var(--c-primary);
+  }
+}
+
+.provider-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s);
+}
+
+.name-field {
+  flex: 1;
+}
+
+.default-badge {
+  padding: 0 var(--s);
+  border-radius: var(--s2);
+  border: 1px solid var(--c-primary);
+  color: var(--c-primary);
+  font-size: var(--font-size-sm);
+  line-height: 22px;
+}
+
+.provider-test {
+  display: flex;
+  align-items: center;
+  gap: var(--s);
+  flex-wrap: wrap;
+}
+
+.test-ok {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-quarter);
+  color: var(--color-success);
+}
+
+.test-fail {
+  color: var(--color-danger);
+  font-size: var(--font-size-sm);
+  overflow-wrap: anywhere;
+}
+
+.add-provider {
+  align-self: flex-start;
+}

@@ -258,6 +258,25 @@
         "Q2": "重要不紧急",
         "Q3": "不重要但紧急",
         "Q4": "不重要不紧急"
+      },
+      "PROVIDERS": {
+        "TITLE": "供应商",
+        "NAME": "名称",
+        "API_TYPE": "接口类型",
+        "TYPE_CHAT": "Chat Completions（OpenAI 兼容）",
+        "TYPE_RESPONSES": "Responses API（OpenAI）",
+        "DEFAULT": "默认",
+        "MAKE_DEFAULT": "设为默认",
+        "ADD": "添加供应商",
+        "PICK": "本对话使用的供应商",
+        "ROUTING": "按功能指定供应商",
+        "ROUTING_HINT": "为每个功能选择供应商，例如四象限分类用便宜的模型，周报用更强的模型。",
+        "F_CHAT": "对话（新对话的默认）",
+        "F_BREAKDOWN": "任务拆解",
+        "F_DAILY": "今日建议",
+        "F_EVENING": "日报复盘",
+        "F_WEEKLY": "周报",
+        "F_CLASSIFY": "四象限分类"
       }
     },
     "ANDROID": {

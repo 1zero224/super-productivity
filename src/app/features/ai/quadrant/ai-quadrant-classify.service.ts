@@ -94,6 +94,7 @@ export class AiQuadrantClassifyService {
         },
       ],
       temperature: 0.2,
+      feature: 'classify',
     });
     return parseClassifyResponse(content, new Set(batch.map((t) => t.id)));
   }
