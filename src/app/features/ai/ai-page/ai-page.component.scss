@@ -10,13 +10,40 @@
 }
 
 .history {
-  flex: 0 0 260px;
+  // The width comes from the resize handle. min-width: 0 stops a long
+  // nowrap title from widening the column to its own length.
+  flex: 0 0 auto;
+  min-width: 0;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   gap: var(--s);
   min-height: 0;
   padding: var(--s2);
-  border-right: 1px solid var(--separator-color);
+}
+
+.history-resize {
+  flex: 0 0 auto;
+  width: 5px;
+  margin: 0 -2px;
+  z-index: 1;
+  cursor: col-resize;
+  background: linear-gradient(
+    to right,
+    transparent 2px,
+    var(--separator-color) 2px,
+    var(--separator-color) 3px,
+    transparent 3px
+  );
+  touch-action: none;
+  transition: background-color var(--transition-duration-s);
+
+  &:hover,
+  &:focus-visible,
+  &.isDragging {
+    outline: none;
+    background: var(--c-primary);
+  }
 }
 
 .new-chat-btn {
@@ -174,7 +201,8 @@
 }
 
 @media (max-width: 720px) {
-  .history {
+  .history,
+  .history-resize {
     display: none;
   }
 }

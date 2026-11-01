@@ -164,7 +164,8 @@
         "PENDING": "Waiting for approval",
         "REJECTED": "Rejected",
         "APPROVE": "Apply",
-        "REJECT": "Reject"
+        "REJECT": "Reject",
+        "GROUP": "{{nr}} tool calls"
       },
       "S": {
         "SUBTASKS_ADDED": "Added {{nr}} subtasks"
@@ -175,7 +176,8 @@
         "NO_HISTORY": "No conversations yet",
         "TAB_CHAT": "Chat",
         "TAB_REPORTS": "Suggestions",
-        "TAB_MEMORY": "Memory"
+        "TAB_MEMORY": "Memory",
+        "RESIZE_HISTORY": "Drag to resize the history"
       },
       "REPORT": {
         "DAILY": "Today's recommendation",

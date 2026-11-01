@@ -1,5 +1,8 @@
 <div class="ai-page">
-  <aside class="history">
+  <aside
+    class="history"
+    [style.width.px]="historyWidth()"
+  >
     <button
       mat-flat-button
       color="primary"
@@ -38,6 +41,20 @@
       }
     </ul>
   </aside>
+  <div
+    class="history-resize"
+    role="separator"
+    aria-orientation="vertical"
+    tabindex="0"
+    [attr.aria-label]="T.F.AI.PAGE.RESIZE_HISTORY | translate"
+    [attr.aria-valuenow]="historyWidth()"
+    [attr.aria-valuemin]="HISTORY_MIN_WIDTH"
+    [attr.aria-valuemax]="HISTORY_MAX_WIDTH"
+    [class.isDragging]="isResizing()"
+    (pointerdown)="startResize($event)"
+    (keydown)="onResizeKeydown($event)"
+    (dblclick)="resetHistoryWidth()"
+  ></div>
 
   <main class="main">
     <nav class="tabs">

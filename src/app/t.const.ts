@@ -166,6 +166,7 @@ const T = {
         REJECTED: 'F.AI.TOOL.REJECTED',
         APPROVE: 'F.AI.TOOL.APPROVE',
         REJECT: 'F.AI.TOOL.REJECT',
+        GROUP: 'F.AI.TOOL.GROUP',
       },
       S: {
         SUBTASKS_ADDED: 'F.AI.S.SUBTASKS_ADDED',
@@ -177,6 +178,7 @@ const T = {
         TAB_CHAT: 'F.AI.PAGE.TAB_CHAT',
         TAB_REPORTS: 'F.AI.PAGE.TAB_REPORTS',
         TAB_MEMORY: 'F.AI.PAGE.TAB_MEMORY',
+        RESIZE_HISTORY: 'F.AI.PAGE.RESIZE_HISTORY',
       },
       REPORT: {
         DAILY: 'F.AI.REPORT.DAILY',

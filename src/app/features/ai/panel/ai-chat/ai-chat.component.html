@@ -49,60 +49,51 @@
           </div>
         }
         @case ('tool') {
+          <ng-container
+            *ngTemplateOutlet="toolCard; context: { $implicit: item }"
+          ></ng-container>
+        }
+        @case ('toolGroup') {
+          @let isOpen = item.isForcedOpen || openToolGroups().has(item.id);
           <div
-            class="tool-card"
+            class="tool-group"
             [class]="'status-' + item.status"
+            [class.isOpen]="isOpen"
           >
-            <div class="tool-head">
+            <button
+              class="tool-group-head"
+              [attr.aria-expanded]="isOpen"
+              [disabled]="item.isForcedOpen"
+              (click)="toggleToolGroup(item.id)"
+            >
               <mat-icon class="tool-icon">{{
-                item.isWrite ? 'edit_note' : 'search'
+                isOpen ? 'expand_more' : 'chevron_right'
               }}</mat-icon>
-              <code class="tool-name">{{ item.name }}</code>
+              <span class="tool-group-count">{{
+                T.F.AI.TOOL.GROUP | translate: { nr: item.tools.length }
+              }}</span>
+              <code class="tool-name">{{ item.summary }}</code>
               <span class="tool-status">
                 @switch (item.status) {
-                  @case ('pending') {
-                    {{ T.F.AI.TOOL.PENDING | translate }}
-                  }
                   @case ('running') {
                     <span class="spinner"></span>
                   }
                   @case ('done') {
                     <mat-icon>check_circle</mat-icon>
                   }
-                  @case ('rejected') {
-                    {{ T.F.AI.TOOL.REJECTED | translate }}
-                  }
                   @case ('error') {
                     <mat-icon>error_outline</mat-icon>
                   }
                 }
               </span>
-            </div>
-            @if (item.isWrite && item.argLines.length) {
-              <ul class="tool-args">
-                @for (line of item.argLines; track $index) {
-                  <li>{{ line }}</li>
+            </button>
+            @if (isOpen) {
+              <div class="tool-group-body">
+                @for (tool of item.tools; track tool.id) {
+                  <ng-container
+                    *ngTemplateOutlet="toolCard; context: { $implicit: tool }"
+                  ></ng-container>
                 }
-              </ul>
-            }
-            @if (item.status === 'error' && item.resultText) {
-              <div class="tool-error">{{ item.resultText }}</div>
-            }
-            @if (item.status === 'pending') {
-              <div class="tool-actions">
-                <button
-                  mat-button
-                  (click)="state.resolveToolCall(item.callId, false)"
-                >
-                  {{ T.F.AI.TOOL.REJECT | translate }}
-                </button>
-                <button
-                  mat-flat-button
-                  color="primary"
-                  (click)="state.resolveToolCall(item.callId, true)"
-                >
-                  {{ T.F.AI.TOOL.APPROVE | translate }}
-                </button>
               </div>
             }
           </div>
@@ -116,6 +107,67 @@
     }
   </div>
 </div>
+
+<ng-template
+  #toolCard
+  let-tool
+>
+  <div
+    class="tool-card"
+    [class]="'status-' + tool.status"
+  >
+    <div class="tool-head">
+      <mat-icon class="tool-icon">{{ tool.isWrite ? 'edit_note' : 'search' }}</mat-icon>
+      <code class="tool-name">{{ tool.name }}</code>
+      <span class="tool-status">
+        @switch (tool.status) {
+          @case ('pending') {
+            {{ T.F.AI.TOOL.PENDING | translate }}
+          }
+          @case ('running') {
+            <span class="spinner"></span>
+          }
+          @case ('done') {
+            <mat-icon>check_circle</mat-icon>
+          }
+          @case ('rejected') {
+            {{ T.F.AI.TOOL.REJECTED | translate }}
+          }
+          @case ('error') {
+            <mat-icon>error_outline</mat-icon>
+          }
+        }
+      </span>
+    </div>
+    @if (tool.isWrite && tool.argLines.length) {
+      <ul class="tool-args">
+        @for (line of tool.argLines; track $index) {
+          <li>{{ line }}</li>
+        }
+      </ul>
+    }
+    @if (tool.status === 'error' && tool.resultText) {
+      <div class="tool-error">{{ tool.resultText }}</div>
+    }
+    @if (tool.status === 'pending') {
+      <div class="tool-actions">
+        <button
+          mat-button
+          (click)="state.resolveToolCall(tool.callId, false)"
+        >
+          {{ T.F.AI.TOOL.REJECT | translate }}
+        </button>
+        <button
+          mat-flat-button
+          color="primary"
+          (click)="state.resolveToolCall(tool.callId, true)"
+        >
+          {{ T.F.AI.TOOL.APPROVE | translate }}
+        </button>
+      </div>
+    }
+  </div>
+</ng-template>
 
 @if (providers().length > 1) {
   <div class="provider-bar">

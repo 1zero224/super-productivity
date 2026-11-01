@@ -176,7 +176,8 @@
         "PENDING": "等待确认",
         "REJECTED": "已拒绝",
         "APPROVE": "执行",
-        "REJECT": "拒绝"
+        "REJECT": "拒绝",
+        "GROUP": "调用了 {{nr}} 次工具"
       },
       "S": {
         "SUBTASKS_ADDED": "已添加 {{nr}} 个子任务"
@@ -187,7 +188,8 @@
         "NO_HISTORY": "还没有对话",
         "TAB_CHAT": "对话",
         "TAB_REPORTS": "建议",
-        "TAB_MEMORY": "记忆"
+        "TAB_MEMORY": "记忆",
+        "RESIZE_HISTORY": "拖动调整历史栏宽度"
       },
       "REPORT": {
         "DAILY": "今日建议",
