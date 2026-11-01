@@ -47,4 +47,8 @@ export interface AiReport {
   // Conclusions written to long-term memory (weekly only)
   memoryIds: string[];
   isRead: boolean;
+  // Evening only: one small adjustment the user may choose to try
+  adjustment?: string;
+  // Evening only: the review revision this report was generated from
+  reviewRevision?: number;
 }

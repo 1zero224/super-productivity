@@ -82,6 +82,7 @@ import { isWithinYesterdayMargin } from './is-include-yesterday.util';
 const FINISH_DAY_SYNC_WAIT_TIMEOUT_MS = 30000;
 export const FINISH_DAY_FINAL_SYNC_TIMEOUT_MS = SYNC_WAIT_TIMEOUT_MS;
 
+import { AiEveningReviewComponent } from '../../features/ai/activity-review/ai-evening-review/ai-evening-review.component';
 @Component({
   selector: 'daily-summary',
   templateUrl: './daily-summary.component.html',
@@ -108,6 +109,7 @@ export const FINISH_DAY_FINAL_SYNC_TIMEOUT_MS = SYNC_WAIT_TIMEOUT_MS;
     InlineMarkdownComponent,
     MatIconButton,
     SimpleCounterSummaryItemComponent,
+    AiEveningReviewComponent,
   ],
   animations: [expandAnimation],
 })

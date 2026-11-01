@@ -159,3 +159,36 @@
   font-size: 11px;
   line-height: 18px;
 }
+
+.adjustment {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s);
+  margin-top: var(--s);
+  padding: var(--s);
+  border-radius: var(--card-border-radius);
+  border: 1px dashed var(--c-primary);
+}
+
+.adjustment-icon {
+  color: var(--c-primary);
+}
+
+.adjustment-main {
+  flex: 1;
+  min-width: 160px;
+}
+
+.adjustment-label {
+  font-size: 12px;
+  color: var(--text-color-muted);
+}
+
+.adjustment-adopted {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-color-muted);
+}

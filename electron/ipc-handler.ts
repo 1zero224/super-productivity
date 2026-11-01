@@ -1,6 +1,7 @@
 import { log } from 'electron-log/main';
 import { pluginNodeExecutor } from './plugin-node-executor';
 import {
+  initActivityWatchIpc,
   initAppControlIpc,
   initAppDataIpc,
   initGlobalShortcutsIpc,
@@ -24,6 +25,7 @@ export const initIpcInterfaces = (): void => {
   initSystemIpc();
   initJiraIpc();
   initGlobalShortcutsIpc();
+  initActivityWatchIpc();
   initClipboardImageHandlers();
   initLocalRestApi();
 };

@@ -80,6 +80,18 @@ describe('parseReportResponse', () => {
     ]);
   });
 
+  it('keeps a trimmed adjustment and omits an empty one', () => {
+    const res = parseReportResponse(
+      JSON.stringify({ markdown: 'x', adjustment: '  Set a check-in point first.  ' }),
+      tasks,
+    );
+    expect(res.adjustment).toBe('Set a check-in point first.');
+    expect(
+      parseReportResponse(JSON.stringify({ markdown: 'x', adjustment: '' }), tasks)
+        .adjustment,
+    ).toBeUndefined();
+  });
+
   it('throws for non-JSON and returns empty results for a wrong shape', () => {
     expect(() => parseReportResponse('not json', tasks)).toThrow();
     expect(parseReportResponse('{"report":1}', tasks)).toEqual({

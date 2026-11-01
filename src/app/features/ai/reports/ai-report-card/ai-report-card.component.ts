@@ -17,6 +17,7 @@ import { AiReport, AiSuggestion } from '../ai-report.model';
 import { AiReportService } from '../ai-report.service';
 import { SnackService } from '../../../../core/snack/snack.service';
 import { AiQuadrant, quadrantFromFlags } from '../../quadrant/ai-quadrant.util';
+import { EveningReviewService } from '../../activity-review/evening-review.service';
 
 const REPORT_META: Record<AiReport['type'], { icon: string; label: string }> = {
   daily: { icon: 'wb_twilight', label: T.F.AI.REPORT.DAILY },
@@ -78,11 +79,17 @@ export const describeSuggestion = (s: AiSuggestion): { key?: string; text?: stri
 export class AiReportCardComponent {
   private readonly _reportService = inject(AiReportService);
   private readonly _snackService = inject(SnackService);
+  private readonly _review = inject(EveningReviewService);
 
   protected readonly T = T;
   readonly report = input.required<AiReport>();
   readonly isCompact = input(false);
   readonly meta = computed(() => REPORT_META[this.report().type]);
+  readonly isAdjustmentAdopted = computed(() => this._review.isAdopted(this.report().id));
+
+  constructor() {
+    this._review.load();
+  }
 
   readonly items = computed(() =>
     this.report().suggestions.map((s) => ({
@@ -128,6 +135,14 @@ export class AiReportCardComponent {
       msg: failed ? T.F.AI.REPORT.S.APPLIED_WITH_ERRORS : T.F.AI.REPORT.S.APPLIED,
       translateParams: { nr: applied, failed },
     });
+  }
+
+  /** The user chooses to try the adjustment; asked about once, on the next day. */
+  async adoptAdjustment(): Promise<void> {
+    const r = this.report();
+    if (r.adjustment) {
+      await this._review.adopt(r.id, r.periodKey, r.adjustment);
+    }
   }
 
   remove(): void {

@@ -24,6 +24,29 @@
     [data]="report().markdown"
   ></markdown>
 
+  @if (report().adjustment; as adjustment) {
+    <section class="adjustment">
+      <mat-icon class="adjustment-icon">lightbulb</mat-icon>
+      <div class="adjustment-main">
+        <div class="adjustment-label">{{ T.F.AI.REPORT.ADJUSTMENT | translate }}</div>
+        <div>{{ adjustment }}</div>
+      </div>
+      @if (isAdjustmentAdopted()) {
+        <span class="adjustment-adopted">
+          <mat-icon>check_circle</mat-icon>
+          {{ T.F.AI.REPORT.ADJUSTMENT_ADOPTED | translate }}
+        </span>
+      } @else {
+        <button
+          mat-stroked-button
+          (click)="adoptAdjustment()"
+        >
+          {{ T.F.AI.REPORT.ADOPT_ADJUSTMENT | translate }}
+        </button>
+      }
+    </section>
+  }
+
   @if (items().length) {
     <section class="suggestions">
       <h4 class="suggestions-title">{{ T.F.AI.REPORT.SUGGESTIONS | translate }}</h4>

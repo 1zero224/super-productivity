@@ -231,6 +231,13 @@
         />
       </mat-form-field>
     </div>
+    <mat-slide-toggle
+      name="isEveningReflection"
+      [disabled]="!model().automation.isEveningEnabled"
+      [ngModel]="model().automation.isEveningReflection"
+      (ngModelChange)="setAutomation('isEveningReflection', $event)"
+      >{{ T.F.AI.SETTINGS.AUTOMATION.EVENING_REFLECTION | translate }}</mat-slide-toggle
+    >
 
     <div class="automation-row">
       <mat-slide-toggle

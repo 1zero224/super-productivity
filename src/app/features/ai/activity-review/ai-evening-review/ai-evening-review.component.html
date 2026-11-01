@@ -1,0 +1,480 @@
+@if (isEnabled()) {
+  <section class="review">
+    <header class="review-head">
+      <mat-icon>history</mat-icon>
+      <h3>{{ T.F.AI.REVIEW.TITLE | translate }}</h3>
+    </header>
+    <p class="privacy">{{ T.F.AI.REVIEW.PRIVACY | translate }}</p>
+
+    @if (followUp(); as fu) {
+      <div class="follow-up">
+        <div class="follow-up-text">
+          <span class="muted">{{ T.F.AI.REVIEW.FOLLOW_UP | translate }}</span>
+          <strong>{{ fu.text }}</strong>
+          <span>{{ T.F.AI.REVIEW.FOLLOW_UP_Q | translate }}</span>
+        </div>
+        <div class="chips">
+          @for (o of FEEDBACK_OPTIONS; track o.value) {
+            <button
+              class="chip"
+              type="button"
+              (click)="feedback(fu.reportId, o.value)"
+            >
+              {{ o.label | translate }}
+            </button>
+          }
+          <button
+            mat-icon-button
+            [matTooltip]="T.G.DISMISS | translate"
+            (click)="feedback(fu.reportId, 'dismissed')"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- Neutral record of the day: shown by default, nothing has to be answered -->
+    <div class="activity">
+      @if (isLoadingActivity()) {
+        <p class="muted">{{ T.F.AI.REVIEW.AW_LOADING | translate }}</p>
+      } @else if (unavailableKey(); as key) {
+        <p class="muted">
+          {{ key | translate }}
+          <button
+            mat-button
+            (click)="loadActivity()"
+          >
+            {{ T.F.AI.REVIEW.RETRY | translate }}
+          </button>
+        </p>
+      } @else if (dayActivity(); as a) {
+        @if (dayActive(); as d) {
+          <p class="day-summary">
+            {{ T.F.AI.REVIEW.DAY_SUMMARY | translate: d }}
+            <button
+              mat-icon-button
+              class="refresh"
+              [matTooltip]="T.F.AI.REVIEW.RETRY | translate"
+              (click)="loadActivity()"
+            >
+              <mat-icon>refresh</mat-icon>
+            </button>
+          </p>
+        }
+        @if (!a.hasAfk) {
+          <p class="muted small">{{ T.F.AI.REVIEW.NO_AFK | translate }}</p>
+        }
+        @if (a.hours.length) {
+          <div
+            class="histogram"
+            aria-hidden="true"
+          >
+            @for (h of a.hours; track h.start) {
+              <div
+                class="bar"
+                [class.isPicked]="pickedHours().has(h.start)"
+                [matTooltip]="formatClock(h.start) + '–' + formatClock(h.end)"
+              >
+                <div
+                  class="bar-idle"
+                  [style.height.%]="(h.idleMinutes / 60) * 100"
+                ></div>
+                <div
+                  class="bar-active"
+                  [style.height.%]="(h.activeMinutes / 60) * 100"
+                ></div>
+                <span class="bar-label">{{ formatClock(h.start).slice(0, 2) }}</span>
+              </div>
+            }
+          </div>
+
+          @for (g of hourGroups(); track g.label) {
+            <div class="part">
+              <h4 class="part-title">{{ g.label | translate }}</h4>
+              @for (h of g.hours; track h.start) {
+                <div
+                  class="hour"
+                  [class.isPicked]="pickedHours().has(h.start)"
+                >
+                  <div class="hour-line">
+                    @if (isPicking()) {
+                      <mat-checkbox
+                        [checked]="pickedHours().has(h.start)"
+                        [aria-label]="formatClock(h.start) + '–' + formatClock(h.end)"
+                        (change)="togglePickedHour(h.start)"
+                      ></mat-checkbox>
+                    }
+                    <span class="hour-time"
+                      >{{ formatClock(h.start) }}–{{ formatClock(h.end) }}</span
+                    >
+                    <span class="hour-apps">
+                      @for (app of h.apps.slice(0, 3); track app.app) {
+                        <span class="app">{{ app.app }} {{ app.minutes }}′</span>
+                      }
+                    </span>
+                    <span class="hour-stats muted">
+                      {{ T.F.AI.REVIEW.STAT_ACTIVE | translate: { nr: h.activeMinutes } }}
+                      @if (h.idleMinutes) {
+                        · {{ T.F.AI.REVIEW.STAT_IDLE | translate: { nr: h.idleMinutes } }}
+                      }
+                      @if (h.unrecordedMinutes) {
+                        ·
+                        {{
+                          T.F.AI.REVIEW.STAT_UNRECORDED
+                            | translate: { nr: h.unrecordedMinutes }
+                        }}
+                      }
+                    </span>
+                    @if (h.spans.length) {
+                      <button
+                        mat-icon-button
+                        class="expand"
+                        [matTooltip]="T.F.AI.REVIEW.SHOW_DETAILS | translate"
+                        (click)="
+                          expandedHour.set(expandedHour() === h.start ? null : h.start)
+                        "
+                      >
+                        <mat-icon>{{
+                          expandedHour() === h.start ? 'expand_less' : 'expand_more'
+                        }}</mat-icon>
+                      </button>
+                    }
+                  </div>
+                  @if (expandedHour() === h.start) {
+                    <ul class="spans">
+                      @for (s of h.spans; track s.start) {
+                        <li>
+                          <span class="muted"
+                            >{{ formatClock(s.start) }}–{{ formatClock(s.end) }}</span
+                          >
+                          <strong>{{ s.app }}</strong>
+                          <span class="muted">{{ s.activeMinutes }}′</span>
+                          @for (t of s.titles; track t) {
+                            <div class="span-title">{{ t }}</div>
+                          }
+                        </li>
+                      }
+                    </ul>
+                  }
+                </div>
+              }
+            </div>
+          }
+        } @else {
+          <p class="muted">{{ T.F.AI.REVIEW.AW_EMPTY | translate }}</p>
+        }
+      }
+    </div>
+
+    <!-- One question; the user chooses the focus -->
+    @if (isPicking()) {
+      <div class="pick-bar">
+        <span>{{ T.F.AI.REVIEW.PICK_HINT | translate }}</span>
+        <span class="spacer"></span>
+        <button
+          mat-button
+          (click)="isPicking.set(false)"
+        >
+          {{ T.G.CANCEL | translate }}
+        </button>
+        <button
+          mat-flat-button
+          color="primary"
+          [disabled]="!pickedRange()"
+          (click)="confirmPick()"
+        >
+          @if (pickedRange(); as r) {
+            {{
+              T.F.AI.REVIEW.PICK_CONFIRM
+                | translate: { range: formatClock(r.start) + '–' + formatClock(r.end) }
+            }}
+          } @else {
+            {{ T.F.AI.REVIEW.PICK_CONFIRM_EMPTY | translate }}
+          }
+        </button>
+      </div>
+    } @else if (draft().disposition === 'pending') {
+      <div class="question">
+        <p class="question-text">{{ T.F.AI.REVIEW.QUESTION | translate }}</p>
+        <div class="question-actions">
+          <button
+            mat-flat-button
+            color="primary"
+            (click)="startPicking()"
+          >
+            {{ T.F.AI.REVIEW.PICK | translate }}
+          </button>
+          <button
+            mat-stroked-button
+            (click)="setDisposition('acceptable')"
+          >
+            {{ T.F.AI.REVIEW.ACCEPTABLE | translate }}
+          </button>
+          <button
+            mat-stroked-button
+            (click)="setDisposition('skipped')"
+          >
+            {{ T.F.AI.REVIEW.SKIP | translate }}
+          </button>
+        </div>
+      </div>
+    } @else if (
+      draft().disposition === 'acceptable' || draft().disposition === 'skipped'
+    ) {
+      <div class="decided">
+        <span>{{
+          (draft().disposition === 'acceptable'
+            ? T.F.AI.REVIEW.DECIDED_ACCEPTABLE
+            : T.F.AI.REVIEW.DECIDED_SKIPPED
+          ) | translate
+        }}</span>
+        <button
+          mat-button
+          (click)="setDisposition('pending')"
+        >
+          {{ T.F.AI.REVIEW.CHANGE | translate }}
+        </button>
+      </div>
+    }
+
+    @if (draft().disposition === 'reviewed') {
+      @for (f of focuses(); track f.id) {
+        <article class="focus">
+          <header class="focus-head">
+            <strong>{{ f.range ?? (T.F.AI.REVIEW.FROM_MEMORY | translate) }}</strong>
+            <span class="spacer"></span>
+            <button
+              mat-icon-button
+              [matTooltip]="T.F.AI.REVIEW.REMOVE_FOCUS | translate"
+              (click)="removeFocus(f.id)"
+            >
+              <mat-icon>close</mat-icon>
+            </button>
+          </header>
+          @if (f.observation; as o) {
+            <p class="muted small">
+              {{
+                T.F.AI.REVIEW.FOCUS_OBS
+                  | translate
+                    : {
+                        active: o.activeMinutes,
+                        idle: o.idleMinutes,
+                        unrecorded: o.unrecordedMinutes,
+                      }
+              }}
+            </p>
+            @if (o.apps.length) {
+              <p class="focus-apps">
+                @for (app of o.apps; track app.app) {
+                  <span class="app">{{ app.app }} {{ app.minutes }}′</span>
+                }
+              </p>
+            }
+          }
+
+          <p class="q">{{ T.F.AI.REVIEW.Q_VIEW | translate }}</p>
+          <div class="chips">
+            @for (v of VIEWS; track v.value) {
+              <button
+                class="chip"
+                type="button"
+                [class.isSelected]="f.views.includes(v.value)"
+                [attr.aria-pressed]="f.views.includes(v.value)"
+                (click)="toggleView(f, v.value)"
+              >
+                {{ v.label | translate }}
+              </button>
+            }
+          </div>
+
+          @if (f.isAdjust) {
+            <p class="q">{{ T.F.AI.REVIEW.Q_INFLUENCE | translate }}</p>
+            <div class="chips">
+              @for (i of INFLUENCES; track i.value) {
+                <button
+                  class="chip"
+                  type="button"
+                  [class.isSelected]="f.influences.includes(i.value)"
+                  [attr.aria-pressed]="f.influences.includes(i.value)"
+                  (click)="toggleInfluence(f, i.value)"
+                >
+                  {{ i.label | translate }}
+                </button>
+              }
+            </div>
+          }
+
+          @if (
+            f.views.length && !(f.views.length === 1 && f.views[0] === 'as_intended')
+          ) {
+            <mat-form-field class="full">
+              <mat-label>{{ T.F.AI.REVIEW.NOTE_LABEL | translate }}</mat-label>
+              <textarea
+                matInput
+                rows="2"
+                [placeholder]="
+                  (f.isMisleading
+                    ? T.F.AI.REVIEW.NOTE_PLACEHOLDER_MISLEADING
+                    : T.F.AI.REVIEW.NOTE_PLACEHOLDER
+                  ) | translate
+                "
+                [value]="f.note"
+                (change)="setNote(f, $any($event.target).value)"
+              ></textarea>
+            </mat-form-field>
+
+            <mat-form-field class="full">
+              <mat-label>{{ T.F.AI.REVIEW.TASKS_LABEL | translate }}</mat-label>
+              <input
+                #taskInput
+                matInput
+                [placeholder]="T.F.AI.REVIEW.TASKS_PLACEHOLDER | translate"
+                [matAutocomplete]="taskAuto"
+                (input)="onTaskQuery(f, taskInput.value)"
+                (focus)="onTaskQuery(f, taskInput.value)"
+              />
+              <mat-autocomplete
+                #taskAuto="matAutocomplete"
+                (optionSelected)="addTask(f, $event.option.value, taskInput)"
+              >
+                @for (t of taskOptions(f); track t.id) {
+                  <mat-option [value]="t.id">
+                    @if (t.isDone) {
+                      <mat-icon>check</mat-icon>
+                    }
+                    {{ t.title }}
+                  </mat-option>
+                }
+              </mat-autocomplete>
+            </mat-form-field>
+            @if (f.tasks.length) {
+              <div class="chips">
+                @for (t of f.tasks; track t.id) {
+                  <span class="task-chip">
+                    @if (t.isDone) {
+                      <mat-icon>check</mat-icon>
+                    }
+                    {{ t.title }}
+                    <button
+                      type="button"
+                      class="task-chip-remove"
+                      [attr.aria-label]="T.G.REMOVE | translate"
+                      (click)="removeTask(f, t.id)"
+                    >
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  </span>
+                }
+              </div>
+            }
+          }
+
+          @if (f.observation?.titles?.length) {
+            <mat-checkbox
+              class="share-titles"
+              [checked]="f.isShareTitles"
+              (change)="setShareTitles(f, $event.checked)"
+              >{{ T.F.AI.REVIEW.SHARE_TITLES | translate }}</mat-checkbox
+            >
+          }
+        </article>
+      }
+
+      @if (!isPicking()) {
+        <div class="more">
+          <button
+            mat-button
+            (click)="startPicking()"
+          >
+            <mat-icon>add</mat-icon>
+            {{ T.F.AI.REVIEW.ANOTHER | translate }}
+          </button>
+          @if (dayActivity()) {
+            <button
+              mat-button
+              (click)="addFocusFromMemory()"
+            >
+              {{ T.F.AI.REVIEW.FROM_MEMORY_ADD | translate }}
+            </button>
+          }
+        </div>
+      }
+    }
+
+    @if (draft().disposition === 'reviewed' || draft().disposition === 'acceptable') {
+      <mat-form-field class="full">
+        <mat-label>{{ T.F.AI.REVIEW.OFFSCREEN_LABEL | translate }}</mat-label>
+        <textarea
+          matInput
+          rows="2"
+          [value]="draft().offScreenNote"
+          (change)="setOffScreenNote($any($event.target).value)"
+        ></textarea>
+      </mat-form-field>
+    }
+
+    <footer class="review-foot">
+      @if (draft().disposition !== 'pending') {
+        <button
+          mat-button
+          (click)="isPreviewOpen.set(!isPreviewOpen())"
+        >
+          <mat-icon>{{ isPreviewOpen() ? 'visibility_off' : 'visibility' }}</mat-icon>
+          {{ T.F.AI.REVIEW.PREVIEW | translate }}
+        </button>
+      }
+      <span class="spacer"></span>
+      @if (draft().revision > 0) {
+        <button
+          mat-button
+          [class.isDanger]="isConfirmingDelete()"
+          (click)="deleteReview()"
+        >
+          {{
+            (isConfirmingDelete() ? T.F.AI.REVIEW.DELETE_CONFIRM : T.F.AI.REVIEW.DELETE)
+              | translate
+          }}
+        </button>
+      }
+      <button
+        mat-flat-button
+        color="primary"
+        [disabled]="!canGenerate()"
+        (click)="generate()"
+      >
+        <mat-icon>bedtime</mat-icon>
+        {{
+          (hasEarlierReport() && !matchingReport()
+            ? T.F.AI.REVIEW.REGENERATE
+            : T.F.AI.REVIEW.GENERATE
+          ) | translate
+        }}
+      </button>
+    </footer>
+
+    @if (isPreviewOpen() && draft().disposition !== 'pending') {
+      <pre class="preview">{{ preview() }}</pre>
+    }
+
+    @if (!isConfigured()) {
+      <p class="muted small">{{ T.F.AI.REVIEW.NOT_CONFIGURED | translate }}</p>
+    } @else if (draft().disposition === 'pending' && !isPicking()) {
+      <p class="muted small">{{ T.F.AI.REVIEW.NOT_DECIDED | translate }}</p>
+    }
+
+    @if (!isInReportList()) {
+      @if (reportService.generating() === 'evening') {
+        <p class="muted">{{ T.F.AI.REPORT.GENERATING | translate }}</p>
+      }
+      @if (reportService.lastError(); as error) {
+        <div class="callout callout--danger">
+          <p>{{ error }}</p>
+        </div>
+      }
+      @if (matchingReport(); as report) {
+        <ai-report-card [report]="report"></ai-report-card>
+      }
+    }
+  </section>
+}

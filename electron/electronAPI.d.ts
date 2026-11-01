@@ -28,6 +28,10 @@ import {
   AssistantAccessScope,
   AssistantAccessState,
 } from './shared-with-frontend/assistant-access.model';
+import {
+  ActivityWatchRequest,
+  ActivityWatchResponse,
+} from './shared-with-frontend/activity-watch.model';
 import { JiraElectronApi } from './shared-with-frontend/jira-request.model';
 
 export interface ElectronAPI {
@@ -295,4 +299,7 @@ export interface ElectronAPI {
   setAssistantAccessEnabled(isEnabled: boolean): Promise<AssistantAccessState>;
   setAssistantAccessScopes(scopes: AssistantAccessScope[]): Promise<AssistantAccessState>;
   rotateAssistantAccessCredential(): Promise<AssistantAccessCredentialResult>;
+
+  // Read-only access to a local ActivityWatch server
+  activityWatchRequest(req: ActivityWatchRequest): Promise<ActivityWatchResponse>;
 }

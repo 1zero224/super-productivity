@@ -52,6 +52,9 @@ export interface AiAutomationSettings {
   // End-of-day review
   isEveningEnabled: boolean;
   eveningTime: string;
+  // Ask the user to look back on the day (ActivityWatch-assisted) before the
+  // evening review; the scheduled slot then only prepares the review
+  isEveningReflection: boolean;
   isWeeklyEnabled: boolean;
   // 0 = Sunday … 6 = Saturday
   weeklyDay: number;
@@ -104,6 +107,7 @@ export const DEFAULT_AI_AUTOMATION_SETTINGS: AiAutomationSettings = {
   dailyTime: '08:30',
   isEveningEnabled: true,
   eveningTime: '21:30',
+  isEveningReflection: true,
   isWeeklyEnabled: true,
   weeklyDay: 0,
   weeklyTime: '20:00',

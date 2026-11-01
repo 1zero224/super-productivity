@@ -1,3 +1,4 @@
+export { initActivityWatchIpc } from './activity-watch';
 export { initAppControlIpc } from './app-control';
 export { initAppDataIpc } from './app-data';
 export { initGlobalShortcutsIpc } from './global-shortcuts';

@@ -22,6 +22,10 @@ import {
   AssistantAccessState,
 } from './shared-with-frontend/assistant-access.model';
 import {
+  ActivityWatchRequest,
+  ActivityWatchResponse,
+} from './shared-with-frontend/activity-watch.model';
+import {
   createJiraPreloadApiConsumer,
   toPayloadOnlyIpcListener,
 } from './shared-with-frontend/preload-api';
@@ -316,6 +320,8 @@ const ea: ElectronAPI = {
     _invoke(
       IPC.ASSISTANT_ACCESS_ROTATE_CREDENTIAL,
     ) as Promise<AssistantAccessCredentialResult>,
+  activityWatchRequest: (req: ActivityWatchRequest) =>
+    _invoke(IPC.ACTIVITY_WATCH_REQUEST, req) as Promise<ActivityWatchResponse>,
 };
 
 // Expose ea to window for ipc-event.ts using contextBridge for context isolation

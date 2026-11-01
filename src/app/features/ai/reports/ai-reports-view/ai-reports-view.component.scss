@@ -53,3 +53,13 @@
 .classify-text {
   flex: 1;
 }
+
+.review-panel {
+  padding: var(--s) var(--s2);
+  border-radius: var(--card-border-radius);
+  border: 1px solid var(--separator-color);
+}
+
+.isActive {
+  border-color: var(--c-primary);
+}

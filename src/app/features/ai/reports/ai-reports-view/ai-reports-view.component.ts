@@ -7,6 +7,7 @@ import {
   inject,
   input,
   OnInit,
+  signal,
 } from '@angular/core';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
@@ -17,13 +18,22 @@ import { AiReportType } from '../ai-report.model';
 import { AiReportCardComponent } from '../ai-report-card/ai-report-card.component';
 import { AiSettingsService } from '../../core/ai-settings.service';
 import { AiQuadrantService } from '../../quadrant/ai-quadrant.service';
+import { AiEveningReviewComponent } from '../../activity-review/ai-evening-review/ai-evening-review.component';
+import { EveningReviewService } from '../../activity-review/evening-review.service';
+import { DateService } from '../../../../core/date/date.service';
 
 const MARK_READ_DELAY_MS = 1500;
 
 /** Report list with "generate now" buttons; `limit` caps the shown reports. */
 @Component({
   selector: 'ai-reports-view',
-  imports: [MatButton, MatIcon, TranslatePipe, AiReportCardComponent],
+  imports: [
+    MatButton,
+    MatIcon,
+    TranslatePipe,
+    AiReportCardComponent,
+    AiEveningReviewComponent,
+  ],
   templateUrl: './ai-reports-view.component.html',
   styleUrl: './ai-reports-view.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -32,12 +42,26 @@ export class AiReportsViewComponent implements OnInit {
   readonly reportService = inject(AiReportService);
   private readonly _settingsService = inject(AiSettingsService);
   private readonly _quadrant = inject(AiQuadrantService);
+  private readonly _review = inject(EveningReviewService);
+  private readonly _dateService = inject(DateService);
 
   protected readonly T = T;
   readonly limit = input<number | null>(null);
   readonly isCompact = input(false);
   readonly isConfigured = this._settingsService.isConfigured;
   readonly unclassifiedCount = computed(() => this._quadrant.unclassifiedTasks().length);
+  readonly isReflectionOn = computed(() => {
+    const a = this._settingsService.settings().automation;
+    return a.isEveningEnabled && a.isEveningReflection;
+  });
+  // The evening slot prepared today's review and it still waits for the user
+  readonly isReviewWaiting = computed(
+    () =>
+      this.isReflectionOn() &&
+      this._review.isTodayPending() &&
+      !this.reportService.hasReport('evening', this._dateService.todayStr()),
+  );
+  readonly isReviewOpen = signal(false);
 
   readonly shownReports = computed(() => {
     const all = this.reportService.reports();
@@ -63,6 +87,16 @@ export class AiReportsViewComponent implements OnInit {
 
   ngOnInit(): void {
     this.reportService.load();
+    this._review.load();
+  }
+
+  /** With reflection on, the evening review starts from the look back. */
+  eveningClicked(): void {
+    if (this.isReflectionOn()) {
+      this.isReviewOpen.update((v) => !v);
+    } else {
+      this.generate('evening');
+    }
   }
 
   generate(type: AiReportType): void {

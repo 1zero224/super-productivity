@@ -1,0 +1,292 @@
+:host {
+  display: block;
+  // The daily summary centers its content; forms read better left-aligned
+  text-align: start;
+}
+
+.review {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s);
+}
+
+.review-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s);
+
+  h3 {
+    margin: 0;
+    font-weight: bold;
+  }
+}
+
+.muted {
+  color: var(--text-color-muted);
+}
+
+.small,
+.privacy {
+  font-size: 12px;
+}
+
+.privacy {
+  margin: 0;
+  color: var(--text-color-muted);
+}
+
+.spacer {
+  flex: 1;
+}
+
+.day-summary {
+  display: flex;
+  align-items: center;
+  margin: 0;
+}
+
+.refresh,
+.expand {
+  flex-shrink: 0;
+}
+
+// One neutral colour for every app: the chart shows where records exist,
+// never which time was "good"
+.histogram {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 64px;
+  padding-bottom: 14px;
+  margin: var(--s) 0;
+}
+
+.bar {
+  position: relative;
+  flex: 1;
+  min-width: 6px;
+  max-width: 28px;
+  height: 100%;
+  display: flex;
+  flex-direction: column-reverse;
+  border-radius: 2px;
+  background: var(--separator-color);
+
+  &.isPicked {
+    outline: 2px solid var(--c-primary);
+  }
+}
+
+.bar-active {
+  background: var(--c-primary);
+  opacity: 0.7;
+}
+
+.bar-idle {
+  background: var(--c-primary);
+  opacity: 0.25;
+}
+
+.bar-label {
+  position: absolute;
+  bottom: -14px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 9px;
+  color: var(--text-color-muted);
+}
+
+.part-title {
+  margin: var(--s) 0 2px;
+  font-size: 12px;
+  font-weight: normal;
+  color: var(--text-color-muted);
+  text-transform: uppercase;
+}
+
+.hour {
+  border-radius: var(--card-border-radius);
+
+  &.isPicked {
+    background: var(--bg-lighter);
+  }
+}
+
+.hour-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0 var(--s);
+  min-height: 36px;
+}
+
+.hour-time {
+  font-variant-numeric: tabular-nums;
+  min-width: 90px;
+}
+
+.hour-apps,
+.focus-apps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  flex: 1;
+  margin: 0;
+}
+
+.app {
+  padding: 0 6px;
+  border-radius: 10px;
+  background: var(--separator-color);
+  font-size: 12px;
+  white-space: nowrap;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hour-stats {
+  font-size: 12px;
+}
+
+.spans {
+  list-style: none;
+  margin: 0 0 var(--s);
+  padding-left: var(--s3, 24px);
+  font-size: 12px;
+
+  li {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 var(--s);
+    padding: 2px 0;
+  }
+}
+
+.span-title {
+  flex-basis: 100%;
+  color: var(--text-color-muted);
+  overflow-wrap: anywhere;
+}
+
+.pick-bar,
+.question-actions,
+.decided,
+.more,
+.review-foot,
+.focus-head,
+.follow-up {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s);
+}
+
+.pick-bar {
+  position: sticky;
+  bottom: 0;
+  padding: var(--s);
+  border-radius: var(--card-border-radius);
+  background: var(--card-bg, var(--bg));
+  border: 1px solid var(--c-primary);
+}
+
+.question-text {
+  margin: var(--s) 0;
+  font-weight: bold;
+}
+
+.focus,
+.follow-up {
+  padding: var(--s) var(--s2);
+  border-radius: var(--card-border-radius);
+  border: 1px solid var(--separator-color);
+}
+
+.follow-up-text {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  flex: 1;
+}
+
+.q {
+  margin: var(--s) 0 4px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.chip {
+  padding: 4px 12px;
+  border-radius: 16px;
+  border: 1px solid var(--extra-border-color);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--c-primary);
+  }
+
+  &.isSelected {
+    border-color: var(--c-primary);
+    background: var(--c-primary);
+    color: var(--c-contrast);
+  }
+}
+
+.task-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 4px 2px 10px;
+  border-radius: 16px;
+  background: var(--separator-color);
+
+  .mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.task-chip-remove {
+  display: inline-flex;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+
+.full {
+  width: 100%;
+  margin-top: var(--s);
+}
+
+.share-titles {
+  display: block;
+  font-size: 12px;
+}
+
+.isDanger {
+  color: var(--c-warn);
+}
+
+.preview {
+  max-height: 320px;
+  overflow: auto;
+  padding: var(--s);
+  border-radius: var(--card-border-radius);
+  background: var(--separator-color);
+  font-size: 11px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

@@ -27,7 +27,8 @@
   <button
     mat-stroked-button
     [disabled]="!isConfigured() || !!reportService.generating()"
-    (click)="generate('evening')"
+    [class.isActive]="isReviewOpen()"
+    (click)="eveningClicked()"
   >
     <mat-icon>bedtime</mat-icon>
     {{ T.F.AI.REPORT.GENERATE_EVENING | translate }}
@@ -41,6 +42,27 @@
     {{ T.F.AI.REPORT.GENERATE_WEEKLY | translate }}
   </button>
 </div>
+
+@if (isReviewWaiting() && !isReviewOpen()) {
+  <div class="classify-banner">
+    <mat-icon>history</mat-icon>
+    <span class="classify-text">{{ T.F.AI.REVIEW.WAITING | translate }}</span>
+    <button
+      mat-flat-button
+      color="primary"
+      (click)="isReviewOpen.set(true)"
+    >
+      {{ T.F.AI.REVIEW.OPEN | translate }}
+    </button>
+  </div>
+}
+
+@if (isReviewOpen()) {
+  <ai-evening-review
+    class="review-panel"
+    [isInReportList]="true"
+  ></ai-evening-review>
+}
 
 @if (reportService.generating()) {
   <div class="generating">

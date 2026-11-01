@@ -178,6 +178,12 @@
           } @else {
             <p>{{ T.PDS.NO_TASKS | translate }}</p>
           }
+          @if (isForToday) {
+            <ai-evening-review
+              style="display: block; margin-top: 48px"
+              [day]="dayStr"
+            ></ai-evening-review>
+          }
           <section style="margin-top: 48px">
             <h3 style="font-weight: bold; margin-bottom: 4px">
               {{ T.PDS.WEEK | translate }}

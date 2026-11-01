@@ -106,6 +106,7 @@ export const normalizeAiSettings = (
       eveningTime: TIME_RE.test(a.eveningTime)
         ? a.eveningTime
         : DEFAULT_AI_AUTOMATION_SETTINGS.eveningTime,
+      isEveningReflection: !!a.isEveningReflection,
       isWeeklyEnabled: !!a.isWeeklyEnabled,
       weeklyDay:
         Number.isInteger(a.weeklyDay) && a.weeklyDay >= 0 && a.weeklyDay <= 6

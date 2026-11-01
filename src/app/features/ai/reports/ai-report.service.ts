@@ -35,6 +35,11 @@ import { DateService } from '../../../core/date/date.service';
 import { AiContextService } from '../context/ai-context.service';
 import { isValidSplitTime } from '../../../util/is-valid-split-time';
 import { Log } from '../../../core/log';
+import { AiSettingsService } from '../core/ai-settings.service';
+import {
+  buildReflectionInput,
+  EveningReviewService,
+} from '../activity-review/evening-review.service';
 
 const AiLog = Log.withContext('ai');
 const MAX_SUGGESTIONS = 12;
@@ -48,6 +53,7 @@ const MAX_REASON_CHARS = 200;
 const MAX_TITLE_CHARS = 200;
 const MAX_MORNING_PLAN_CHARS = 3000;
 const MAX_OPEN_TASKS_WEEKLY = 60;
+const MAX_ADJUSTMENT_CHARS = 300;
 
 const REPORT_PROMPTS: Record<Exclude<AiReportType, 'classify'>, string> = {
   daily: AI_DAILY_REPORT_PROMPT,
@@ -57,6 +63,7 @@ const REPORT_PROMPTS: Record<Exclude<AiReportType, 'classify'>, string> = {
 
 export interface ParsedReport {
   markdown: string;
+  adjustment?: string;
   suggestions: AiSuggestion[];
   memories: { text: string; kind: AiMemoryKind }[];
 }
@@ -165,8 +172,10 @@ export const parseReportResponse = (
     markdown?: unknown;
     suggestions?: unknown;
     memories?: unknown;
+    adjustment?: unknown;
   };
   const markdown = typeof json.markdown === 'string' ? json.markdown.trim() : '';
+  const adjustment = str(json.adjustment, MAX_ADJUSTMENT_CHARS);
   const suggestions: AiSuggestion[] = [];
   const seen = new Set<string>();
   const activeShortGoals = new Map(
@@ -287,7 +296,7 @@ export const parseReportResponse = (
     memories.push({ text: m.text.trim(), kind });
     if (memories.length >= MAX_WEEKLY_MEMORIES) break;
   }
-  return { markdown, suggestions, memories };
+  return { markdown, suggestions, memories, ...(adjustment ? { adjustment } : {}) };
 };
 
 @Injectable({ providedIn: 'root' })
@@ -302,6 +311,8 @@ export class AiReportService {
   private readonly _context = inject(AiContextService);
   private readonly _quadrant = inject(AiQuadrantService);
   private readonly _classifier = inject(AiQuadrantClassifyService);
+  private readonly _settings = inject(AiSettingsService);
+  private readonly _review = inject(EveningReviewService);
   private readonly _db = new AiEntityStore<AiReport>('reports');
 
   private readonly _reports = signal<AiReport[]>([]);
@@ -337,8 +348,14 @@ export class AiReportService {
     this.generating.set(type);
     this.lastError.set(null);
     try {
-      await Promise.all([this.load(), this._goals.load(), this._memory.load()]);
+      await Promise.all([
+        this.load(),
+        this._goals.load(),
+        this._memory.load(),
+        this._review.load(),
+      ]);
       const key = periodKey ?? this._dateService.todayStr();
+      const reviewRevision = this._usedReviewRevision(type, key);
       const parsed =
         type === 'classify'
           ? await this._generateClassify()
@@ -361,6 +378,8 @@ export class AiReportService {
         suggestions: parsed.suggestions,
         memoryIds,
         isRead: false,
+        ...(parsed.adjustment ? { adjustment: parsed.adjustment } : {}),
+        ...(reviewRevision !== null ? { reviewRevision } : {}),
       };
       await this._db.put(report);
       this._reports.update((list) => [...list, report]);
@@ -501,6 +520,36 @@ export class AiReportService {
     this._reports.update((list) => list.filter((r) => r.id !== reportId));
   }
 
+  /** Whether the evening review comes after the user's own review of the day. */
+  isEveningReflectionOn(): boolean {
+    return this._settings.settings().automation.isEveningReflection;
+  }
+
+  /**
+   * Evening + reflection: the review revision the report is based on. Throws
+   * while the day is still undecided — nothing is generated without the user.
+   */
+  private _usedReviewRevision(type: AiReportType, key: string): number | null {
+    if (type !== 'evening' || !this.isEveningReflectionOn()) {
+      return null;
+    }
+    const draft = this._review.getDraft(key);
+    if (draft.disposition === 'pending') {
+      throw new Error('Review the day first, or choose to skip the review');
+    }
+    return draft.revision;
+  }
+
+  /** The latest evening report built from exactly this review revision. */
+  findEveningForRevision(day: string, revision: number): AiReport | null {
+    return (
+      this.reports().find(
+        (r) =>
+          r.type === 'evening' && r.periodKey === day && r.reviewRevision === revision,
+      ) ?? null
+    );
+  }
+
   hasReport(type: AiReportType, periodKey: string): boolean {
     return this._reports().some((r) => r.type === type && r.periodKey === periodKey);
   }
@@ -519,11 +568,21 @@ export class AiReportService {
         const morning = this._reports().find(
           (r) => r.type === 'daily' && r.periodKey === key,
         );
+        const isReflection = this.isEveningReflectionOn();
+        const entities = await firstValueFrom(this._store.select(selectTaskEntities));
         return {
           ...(await this._data.collectEvening(key)),
           weeklyDirection: this._latestWeeklyDirection(),
-          // The model's own earlier output, so the review can compare
+          // The model's own earlier output: a suggestion, never the user's commitment
           morningPlan: morning ? morning.markdown.slice(0, MAX_MORNING_PLAN_CHARS) : null,
+          reflection: isReflection
+            ? buildReflectionInput(this._review.getDraft(key), (id) =>
+                entities[id]
+                  ? { title: entities[id]!.title, isDone: entities[id]!.isDone }
+                  : undefined,
+              )
+            : null,
+          priorAdjustment: isReflection ? this._review.priorAdjustment(key) : null,
         };
       }
       case 'weekly':

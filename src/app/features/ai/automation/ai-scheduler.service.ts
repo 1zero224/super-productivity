@@ -10,6 +10,7 @@ import { DateService } from '../../../core/date/date.service';
 import { getDbDateStr } from '../../../util/get-db-date-str';
 import { getDateTimeFromClockString } from '../../../util/get-date-time-from-clock-string';
 import { Log } from '../../../core/log';
+import { EveningReviewService } from '../activity-review/evening-review.service';
 
 const AiLog = Log.withContext('ai');
 const TICK_MS = 60_000;
@@ -99,6 +100,7 @@ export class AiSchedulerService implements OnDestroy {
   private readonly _reportService = inject(AiReportService);
   private readonly _panelState = inject(AiPanelStateService);
   private readonly _dateService = inject(DateService);
+  private readonly _review = inject(EveningReviewService);
 
   private _intervalId?: number;
   private _isTicking = false;
@@ -137,8 +139,14 @@ export class AiSchedulerService implements OnDestroy {
         const failedAt = this._failedAt.get(job.type);
         if (failedAt && now - failedAt < RETRY_AFTER_FAILURE_MS) continue;
 
-        // A report generated manually for this period also counts as a run
-        if (!this._reportService.hasReport(job.type, key)) {
+        if (job.type === 'evening' && settings.automation.isEveningReflection) {
+          // Only prepare the day's review and show its entry quietly: the
+          // report is generated once the user has looked back (or skipped)
+          if (!this._reportService.hasReport(job.type, key)) {
+            await this._review.ensureDraft(key);
+          }
+        } else if (!this._reportService.hasReport(job.type, key)) {
+          // A report generated manually for this period also counts as a run
           try {
             // null = another generation is running; try again next tick
             if (!(await this._reportService.generate(job.type, key))) continue;
