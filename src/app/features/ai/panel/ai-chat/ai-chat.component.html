@@ -26,6 +26,12 @@
         >
           {{ T.F.AI.CHAT.SUGGEST_GOALS | translate }}
         </button>
+        <button
+          mat-stroked-button
+          (click)="askSuggestion(T.F.AI.CHAT.SUGGEST_SET_GOALS)"
+        >
+          {{ T.F.AI.CHAT.SUGGEST_SET_GOALS | translate }}
+        </button>
       </div>
     </div>
   }
@@ -34,17 +40,65 @@
     @for (item of chatView(); track item.id) {
       @switch (item.kind) {
         @case ('user') {
-          <div class="msg isUser">{{ item.text }}</div>
+          <div class="msg-wrap isUser">
+            <div class="msg isUser">{{ item.text }}</div>
+            <div class="msg-actions">
+              <button
+                mat-icon-button
+                class="msg-action"
+                [matTooltip]="T.F.AI.CHAT.COPY | translate"
+                (click)="state.copyText(item.text)"
+              >
+                <mat-icon>content_copy</mat-icon>
+              </button>
+            </div>
+          </div>
         }
         @case ('assistant') {
-          <div
-            class="msg isAssistant"
-            [class.isStreaming]="item.isStreaming"
-          >
-            @if (item.text) {
-              <markdown [data]="item.text"></markdown>
-            } @else {
-              <span class="typing"><i></i><i></i><i></i></span>
+          <div class="msg-wrap isAssistant">
+            <div
+              class="msg isAssistant"
+              [class.isStreaming]="item.isStreaming"
+            >
+              @if (item.text) {
+                <markdown [data]="item.text"></markdown>
+              } @else {
+                <span class="typing"><i></i><i></i><i></i></span>
+              }
+            </div>
+            @if (!item.isStreaming && item.text) {
+              <div class="msg-actions">
+                <button
+                  mat-icon-button
+                  class="msg-action"
+                  [matTooltip]="T.F.AI.CHAT.COPY | translate"
+                  (click)="state.copyText(item.text)"
+                >
+                  <mat-icon>content_copy</mat-icon>
+                </button>
+                @if (item.msgCount !== undefined) {
+                  @if (item.id !== lastItemId()) {
+                    <button
+                      mat-icon-button
+                      class="msg-action"
+                      [disabled]="state.isChatRunning()"
+                      [matTooltip]="T.F.AI.CHAT.REWIND | translate"
+                      (click)="state.rewindTo(item.id)"
+                    >
+                      <mat-icon>history</mat-icon>
+                    </button>
+                  }
+                  <button
+                    mat-icon-button
+                    class="msg-action"
+                    [disabled]="state.isChatRunning()"
+                    [matTooltip]="T.F.AI.CHAT.BRANCH | translate"
+                    (click)="state.branchFrom(item.id)"
+                  >
+                    <mat-icon>call_split</mat-icon>
+                  </button>
+                }
+              </div>
             }
           </div>
         }

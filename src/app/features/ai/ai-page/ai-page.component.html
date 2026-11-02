@@ -24,7 +24,16 @@
             class="history-open"
             (click)="openConversation(c.id)"
           >
-            <span class="history-item-title">{{ c.title }}</span>
+            <span class="history-item-title">
+              @if (c.branchOf) {
+                <mat-icon
+                  class="history-branch-icon"
+                  [matTooltip]="T.F.AI.CHAT.BRANCHED_FROM | translate"
+                  >call_split</mat-icon
+                >
+              }
+              {{ c.title }}
+            </span>
             <span class="history-date">{{ c.updated | date: 'short' }}</span>
           </button>
           <button
@@ -69,6 +78,17 @@
           @if (t.id === 'reports' && unreadCount()) {
             <span class="badge">{{ unreadCount() }}</span>
           }
+        </button>
+      }
+      @if (effectiveTab() === 'chat') {
+        <button
+          mat-icon-button
+          class="tabs-action"
+          [matTooltip]="T.F.AI.CHAT.COPY_ALL | translate"
+          [disabled]="!state.chatItems().length"
+          (click)="state.copyConversation()"
+        >
+          <mat-icon>content_copy</mat-icon>
         </button>
       }
     </nav>

@@ -4,6 +4,14 @@
     <h2 class="panel-title">{{ T.F.AI.TITLE | translate }}</h2>
     <button
       mat-icon-button
+      [matTooltip]="T.F.AI.CHAT.COPY_ALL | translate"
+      [disabled]="!state.chatItems().length"
+      (click)="state.copyConversation()"
+    >
+      <mat-icon>content_copy</mat-icon>
+    </button>
+    <button
+      mat-icon-button
       [matTooltip]="T.F.AI.CHAT.NEW | translate"
       [disabled]="!state.chatItems().length"
       (click)="state.newConversation()"

@@ -13,6 +13,17 @@ const AI_GOAL_PRIORITY_RULE = `Goal priority: short-term goals first, then mid-t
   Long-term goals are a vision and mid-term goals a direction — compasses, not tasks. Never schedule them directly
   or plan short-, mid- and long-term work into the same day.`;
 
+const AI_GOAL_SETTING_RULES = `Goals (create_goal / update_goal) — when the user wants to set, refine or review goals:
+  - Horizons: long = vision for 1–5 years, mid = direction for 1–6 months, short = a concrete, measurable
+    focus for the next 1–4 weeks. Work top-down: long → mid (parentId = long) → short (parentId = mid).
+  - First look at the existing goal tree below and ask one or two short questions when the user's intent,
+    timeframe or measure of success is unclear. Then propose the goals in a short list before calling tools.
+  - Each goal: a short outcome statement as title; why it matters and how success is measured in the description;
+    a targetDate when the user gave or agreed to one. Keep it small: at most 1–3 active short-term goals per mid-term goal.
+  - Create parents before children and use the returned id as parentId. Never duplicate an existing goal:
+    refine it with update_goal instead. Mark reached goals "done" and abandoned ones "dropped" only when the user says so.
+  - After creating short-term goals, offer the first concrete tasks for them (create_task with goalId).`;
+
 export const AI_ASSISTANT_SYSTEM_PROMPT = `You are the built-in assistant of a personal todo and time-tracking app.
 You help the user plan, prioritize (Eisenhower matrix: important / urgent), break tasks down and keep their task list tidy.
 
@@ -25,6 +36,7 @@ Rules:
   ${AI_QUADRANT_LEGEND}
 - ${AI_GOAL_PRIORITY_RULE}
 - New concrete tasks that serve a short-term goal should be linked to it (goalId / link_task_to_goal).
+- ${AI_GOAL_SETTING_RULES}
 - Align advice with the user's goals and long-term memory below.
 - When the user states a lasting preference, habit or decision, offer to save it with "remember".
 - ${AI_UNTRUSTED_RULE}`;
@@ -156,6 +168,9 @@ ${AI_SUGGESTION_RULES}
     a short-term goal under a mid-term goal marked "(no active short-term goal yet)", or
     a mid-term goal under a long-term goal marked "(no active mid-term goal yet)".
     "parentId" is that mid- or long-term goal. At most 1 new short-term and 1 new mid-term goal per review.
+  - close_goal: mark an active short- or mid-term goal "done" when the week shows it was reached (e.g. all its
+    linked tasks are done and its measure of success is met), or "dropped" only when the user clearly abandoned it.
+    Closing a short-term goal usually leaves a gap under its mid-term goal: you may fill it with create_goal.
 - Never re-split goals that already have active sub-goals, never create long-term goals,
   and never turn a long-term goal directly into tasks.
 - ${AI_UNTRUSTED_RULE}
@@ -167,7 +182,8 @@ Respond with JSON only, exactly in this shape:
   {"tool":"create_task","args":{"title":"string","important":boolean,"urgent":boolean,
     "goalId":"shortGoalId (optional)","estimateMinutes":number},"reason":"string"},
   {"tool":"create_goal","args":{"title":"string","description":"string","parentId":"midOrLongGoalId"},
-    "reason":"string"}
+    "reason":"string"},
+  {"tool":"close_goal","args":{"id":"shortOrMidGoalId","status":"done|dropped"},"reason":"string"}
 ],"memories":[{"text":"string","kind":"habit|preference|review"}]}`;
 
 export const AI_QUADRANT_CLASSIFY_PROMPT = `You sort tasks into the Eisenhower matrix for a personal todo app.

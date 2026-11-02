@@ -110,6 +110,19 @@
   white-space: nowrap;
 }
 
+.history-branch-icon {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+  vertical-align: -2px;
+  color: var(--text-color-muted);
+}
+
+.tabs-action {
+  margin-left: auto;
+  align-self: center;
+}
+
 .history-date {
   font-size: var(--font-size-sm);
   color: var(--text-color-muted);

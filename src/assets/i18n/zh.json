@@ -170,7 +170,19 @@
         "SUGGEST_PLAN": "今天我应该先做什么？帮我安排一下今天。",
         "SUGGEST_QUADRANT": "看看我今天的任务，给出四象限调整建议。",
         "NEW": "新对话",
-        "SUGGEST_GOALS": "我的哪个目标最近投入太少？这周应该怎么调整？"
+        "SUGGEST_GOALS": "我的哪个目标最近投入太少？这周应该怎么调整？",
+        "SUGGEST_SET_GOALS": "帮我建立长期、中期和短期目标。先问我你需要了解的信息。",
+        "COPY": "复制",
+        "COPY_ALL": "复制整个对话",
+        "REWIND": "回退到这里（删除之后的消息）",
+        "BRANCH": "从这里分支出新对话",
+        "BRANCHED_FROM": "从其他对话分支而来",
+        "ROLE_USER": "我",
+        "ROLE_AI": "AI",
+        "S": {
+          "REWOUND": "已回退对话",
+          "BRANCHED": "已创建分支对话"
+        }
       },
       "TOOL": {
         "PENDING": "等待确认",
@@ -211,6 +223,8 @@
         "TO_TODAY": "今天",
         "NEW_TASK": "新任务",
         "NEW_GOAL": "新短期目标",
+        "GOAL_DONE": "标记目标已达成",
+        "GOAL_DROPPED": "放弃目标",
         "UNCLASSIFIED": "有 {{nr}} 个任务还没有四象限标签",
         "CLASSIFY_NOW": "AI 一键补全",
         "ADJUSTMENT": "可以试试",
@@ -233,7 +247,7 @@
       "GOALS": {
         "TITLE": "目标",
         "INTRO": "长期、中期和短期目标。AI 助手会据此规划和复盘。只保存在本设备。",
-        "ASK_AI": "问 AI",
+        "ASK_AI": "AI 帮我定目标",
         "LONG": "长期目标",
         "MID": "中期目标",
         "SHORT": "短期目标",

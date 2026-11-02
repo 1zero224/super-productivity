@@ -157,6 +157,8 @@ export class AiChatComponent {
   readonly chatView = computed<AiChatViewItem[]>(() =>
     groupToolRuns(this.state.chatItems()),
   );
+  // Rewinding to the last item would change nothing
+  readonly lastItemId = computed(() => this.state.chatItems().at(-1)?.id);
   // Tool groups the user opened; collapsed is the default
   readonly openToolGroups = signal<ReadonlySet<string>>(new Set());
 

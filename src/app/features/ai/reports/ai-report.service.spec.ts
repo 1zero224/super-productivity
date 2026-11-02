@@ -177,6 +177,28 @@ describe('parseReportResponse create suggestions', () => {
     ]);
   });
 
+  it('closes reached goals and lets the review fill the gap they leave', () => {
+    const res = parseReportResponse(
+      JSON.stringify({
+        markdown: 'w',
+        suggestions: [
+          { tool: 'create_goal', args: { title: 'Next short', parentId: 'M1' } },
+          { tool: 'close_goal', args: { id: 'S1', status: 'done' }, reason: 'all done' },
+          { tool: 'close_goal', args: { id: 'S1', status: 'dropped' } },
+          { tool: 'close_goal', args: { id: 'L', status: 'done' } },
+          { tool: 'close_goal', args: { id: 'nope' } },
+        ],
+      }),
+      tasks,
+      { goals, ...REPORT_CREATE_LIMITS.weekly },
+    );
+    expect(res.suggestions.map((s) => [s.tool, s.args])).toEqual([
+      ['create_goal', jasmine.objectContaining({ parentId: 'M1', horizon: 'short' })],
+      ['close_goal', { id: 'S1', status: 'done' }],
+    ]);
+    expect(res.suggestions[1].taskTitle).toBe('Short');
+  });
+
   it('never creates tasks or goals from the morning or evening plan', () => {
     for (const type of ['daily', 'evening'] as const) {
       const res = parseReportResponse(response, tasks, {

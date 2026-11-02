@@ -30,7 +30,6 @@ import {
 import { selectAllProjects } from '../../../project/store/project.selectors';
 import { selectAllTagsWithoutMyDay } from '../../../tag/store/tag.reducer';
 import { selectTaskEntities } from '../../../tasks/store/task.selectors';
-import { LayoutService } from '../../../../core-ui/layout/layout.service';
 import { AiPanelStateService } from '../../ai-panel-state.service';
 
 const HORIZON_ICONS: Record<AiGoalHorizon, string> = {
@@ -67,7 +66,6 @@ export class GoalsPageComponent implements OnInit {
   private readonly _goalsService = inject(AiGoalsService);
   private readonly _dialog = inject(MatDialog);
   private readonly _store = inject(Store);
-  private readonly _layoutService = inject(LayoutService);
   private readonly _panelState = inject(AiPanelStateService);
 
   protected readonly T = T;
@@ -148,8 +146,7 @@ export class GoalsPageComponent implements OnInit {
   }
 
   askAi(): void {
-    this._panelState.panelView.set('chat');
-    this._layoutService.showAiPanel();
+    this._panelState.startGoalCoaching();
   }
 
   private _openDialog(data: DialogGoalEditData): Promise<AiGoalDraft | undefined> {

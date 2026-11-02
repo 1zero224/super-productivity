@@ -158,7 +158,19 @@
         "SUGGEST_PLAN": "What should I do first today, and how should I arrange my day?",
         "SUGGEST_QUADRANT": "Review my today list and suggest Eisenhower quadrant adjustments.",
         "NEW": "New conversation",
-        "SUGGEST_GOALS": "Which of my goals is getting too little attention, and what should I do about it this week?"
+        "SUGGEST_GOALS": "Which of my goals is getting too little attention, and what should I do about it this week?",
+        "SUGGEST_SET_GOALS": "Help me set up my long-term, mid-term and short-term goals. Ask me what you need to know first.",
+        "COPY": "Copy",
+        "COPY_ALL": "Copy conversation",
+        "REWIND": "Rewind to here (drops the later messages)",
+        "BRANCH": "Branch into a new conversation from here",
+        "BRANCHED_FROM": "Branched from another conversation",
+        "ROLE_USER": "Me",
+        "ROLE_AI": "AI",
+        "S": {
+          "REWOUND": "Rewound the conversation",
+          "BRANCHED": "Started a branch conversation"
+        }
       },
       "TOOL": {
         "PENDING": "Waiting for approval",
@@ -199,6 +211,8 @@
         "TO_TODAY": "today",
         "NEW_TASK": "New task",
         "NEW_GOAL": "New short-term goal",
+        "GOAL_DONE": "mark goal as reached",
+        "GOAL_DROPPED": "drop goal",
         "UNCLASSIFIED": "{{nr}} tasks have no quadrant tag yet",
         "CLASSIFY_NOW": "Fill with AI",
         "ADJUSTMENT": "Something to try",
@@ -221,7 +235,7 @@
       "GOALS": {
         "TITLE": "Goals",
         "INTRO": "Long-, mid- and short-term goals. The AI assistant plans and reviews against them. Stored only on this device.",
-        "ASK_AI": "Ask AI",
+        "ASK_AI": "Set goals with AI",
         "LONG": "Long-term",
         "MID": "Mid-term",
         "SHORT": "Short-term",

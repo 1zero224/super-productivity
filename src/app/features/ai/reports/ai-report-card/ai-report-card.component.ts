@@ -32,6 +32,7 @@ const SUGGESTION_ICONS: Record<AiSuggestion['tool'], string> = {
   schedule_task: 'event',
   create_task: 'add_task',
   create_goal: 'flag',
+  close_goal: 'outlined_flag',
 };
 
 export const QUADRANT_LABEL_KEYS: Record<AiQuadrant, string> = {
@@ -54,6 +55,13 @@ export const describeSuggestion = (s: AiSuggestion): { key?: string; text?: stri
       return { key: T.F.AI.REPORT.TO_TODAY };
     case 'schedule_task':
       return { text: `${s.args.day}${s.args.time ? ` ${s.args.time}` : ''}` };
+    case 'close_goal':
+      return {
+        key:
+          s.args.status === 'dropped'
+            ? T.F.AI.REPORT.GOAL_DROPPED
+            : T.F.AI.REPORT.GOAL_DONE,
+      };
     case 'create_task':
     case 'create_goal':
       return { text: s.detail ?? '' };

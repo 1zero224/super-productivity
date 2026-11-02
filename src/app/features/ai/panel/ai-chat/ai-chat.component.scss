@@ -34,8 +34,63 @@
   gap: var(--s);
 }
 
-.msg {
+.msg-wrap {
+  display: flex;
+  flex-direction: column;
   max-width: 92%;
+
+  &.isUser {
+    align-self: flex-end;
+    align-items: flex-end;
+  }
+
+  &.isAssistant {
+    align-self: flex-start;
+    align-items: flex-start;
+  }
+
+  // Revealed on hover / keyboard focus; always shown on touch devices
+  &:hover .msg-actions,
+  &:focus-within .msg-actions {
+    opacity: 1;
+  }
+}
+
+.msg-actions {
+  display: flex;
+  gap: var(--s-quarter);
+  opacity: 0;
+  transition: opacity var(--transition-duration-s);
+
+  @media (hover: none) {
+    opacity: 1;
+  }
+}
+
+.msg-action.mat-mdc-icon-button {
+  --mdc-icon-button-state-layer-size: 28px;
+  --mat-icon-button-state-layer-size: 28px;
+  width: 28px;
+  height: 28px;
+  padding: 4px;
+  color: var(--text-color-muted);
+
+  .mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.msg {
+  max-width: 100%;
+  // The app disables selection globally; chat text must be copyable
+  user-select: text;
+
+  ::ng-deep * {
+    user-select: text;
+  }
+
   padding: var(--s) var(--s2);
   border-radius: var(--card-border-radius);
   line-height: var(--line-height-normal);

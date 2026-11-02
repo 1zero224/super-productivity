@@ -7,7 +7,8 @@ export type AiSuggestionTool =
   | 'add_to_today'
   | 'schedule_task'
   | 'create_task'
-  | 'create_goal';
+  | 'create_goal'
+  | 'close_goal';
 export const AI_TASK_SUGGESTION_TOOLS: AiSuggestionTool[] = [
   'set_quadrant',
   'add_to_today',

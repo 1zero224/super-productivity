@@ -59,6 +59,7 @@ export class AiConversationService {
     items: AiChatItem[],
     messages: AiMessage[],
     providerId: string | null = null,
+    branchOf?: string | null,
   ): Promise<void> {
     await this.load();
     if (!items.length) {
@@ -75,6 +76,7 @@ export class AiConversationService {
       items: settled,
       messages: [...messages],
       providerId,
+      branchOf: branchOf !== undefined ? branchOf : (existing?.branchOf ?? null),
     };
     await this._db.put(conversation);
     this._conversations.update((list) => [

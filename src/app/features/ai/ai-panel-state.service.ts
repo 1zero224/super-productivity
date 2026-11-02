@@ -16,10 +16,12 @@ import { SnackService } from '../../core/snack/snack.service';
 import { T } from '../../t.const';
 import { Log } from '../../core/log';
 import { AiMessage } from './core/ai-client.model';
-import { AiChatItem } from './ai-chat.model';
+import { AiChatItem, chatToMarkdown, cutChatAt } from './ai-chat.model';
 import { AiConversationService } from './conversations/ai-conversation.service';
 import { AiGoalsService } from './goals/ai-goals.service';
 import { AiMemoryService } from './memory/ai-memory.service';
+import { TranslateService } from '@ngx-translate/core';
+import { AiSettingsService } from './core/ai-settings.service';
 
 export type { AiChatItem, AiToolCallStatus } from './ai-chat.model';
 
@@ -74,6 +76,8 @@ export class AiPanelStateService {
   private readonly _conversations = inject(AiConversationService);
   private readonly _goals = inject(AiGoalsService);
   private readonly _memory = inject(AiMemoryService);
+  private readonly _translateService = inject(TranslateService);
+  private readonly _settings = inject(AiSettingsService);
 
   readonly breakdown = signal<AiBreakdownState | null>(null);
   readonly chatItems = signal<AiChatItem[]>([]);
@@ -124,6 +128,19 @@ export class AiPanelStateService {
     this.open();
   }
 
+  /** Opens a fresh chat in which the AI helps to set up long / mid / short-term goals. */
+  async startGoalCoaching(): Promise<void> {
+    this.panelView.set('chat');
+    this.open();
+    if (!this._settings.isConfigured()) {
+      return;
+    }
+    if (this.chatItems().length) {
+      await this.newConversation();
+    }
+    await this.sendChat(this._translateService.instant(T.F.AI.CHAT.SUGGEST_SET_GOALS));
+  }
+
   // ---------- conversations ----------
 
   async newConversation(): Promise<void> {
@@ -162,6 +179,83 @@ export class AiPanelStateService {
     const done = new Promise<void>((resolve) => this._onRunDone.push(resolve));
     this.abortChat();
     return done;
+  }
+
+  /** Drops everything after a final answer, so the chat continues from there. */
+  rewindTo(itemId: string): void {
+    if (this.isChatRunning()) {
+      return;
+    }
+    const before = { items: this.chatItems(), messages: [...this._agent.messages] };
+    const cut = cutChatAt(before.items, before.messages, itemId);
+    if (!cut || cut.items.length === before.items.length) {
+      return;
+    }
+    const conversationId = this.conversationId();
+    this._applyTranscript(cut.items, cut.messages);
+    this._snackService.open({
+      msg: T.F.AI.CHAT.S.REWOUND,
+      actionStr: T.G.UNDO,
+      actionFn: () => {
+        if (this.conversationId() === conversationId && !this.isChatRunning()) {
+          this._applyTranscript(before.items, before.messages);
+        }
+      },
+    });
+  }
+
+  /** Starts a new conversation with everything up to a final answer; the original stays. */
+  async branchFrom(itemId: string): Promise<void> {
+    if (this.isChatRunning()) {
+      return;
+    }
+    const cut = cutChatAt(this.chatItems(), this._agent.messages, itemId);
+    if (!cut) {
+      return;
+    }
+    const sourceId = this.conversationId();
+    const id = nanoid();
+    // Fresh item ids: both conversations can be open in the same session
+    const items = cut.items.map((it) => ({ ...it, id: nanoid() }));
+    await this._conversations.save(
+      id,
+      items,
+      cut.messages,
+      this.chatProviderId(),
+      sourceId,
+    );
+    this._agent.load(cut.messages);
+    this.chatItems.set(items);
+    this.conversationId.set(id);
+    this._snackService.open({ type: 'SUCCESS', msg: T.F.AI.CHAT.S.BRANCHED });
+  }
+
+  async copyText(text: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(text);
+      this._snackService.open({
+        type: 'SUCCESS',
+        msg: T.GLOBAL_SNACK.COPY_TO_CLIPPBOARD,
+      });
+    } catch (e) {
+      AiLog.err('Copy to clipboard failed', e);
+      this._snackService.open({ type: 'ERROR', msg: (e as Error).message });
+    }
+  }
+
+  copyConversation(): Promise<void> {
+    return this.copyText(
+      chatToMarkdown(this.chatItems(), {
+        user: this._translateService.instant(T.F.AI.CHAT.ROLE_USER),
+        assistant: this._translateService.instant(T.F.AI.CHAT.ROLE_AI),
+      }),
+    );
+  }
+
+  private _applyTranscript(items: AiChatItem[], messages: AiMessage[]): void {
+    this._agent.load(messages);
+    this.chatItems.set(items);
+    this._persistConversation();
   }
 
   // ---------- breakdown ----------
@@ -360,7 +454,13 @@ export class AiPanelStateService {
         break;
       case 'assistant_end': {
         const id = this._streamingItemId;
-        this._updateStreaming((it) => ({ ...it, isStreaming: false }));
+        const last = this._agent.messages[this._agent.messages.length - 1];
+        const isFinal = last?.role === 'assistant' && !last.tool_calls?.length;
+        this._updateStreaming((it) => ({
+          ...it,
+          isStreaming: false,
+          ...(isFinal ? { msgCount: this._agent.messages.length } : {}),
+        }));
         // Drop empty bubbles of turns that only issued tool calls
         if (id && !ev.content.trim()) {
           this.chatItems.update((items) => items.filter((it) => it.id !== id));

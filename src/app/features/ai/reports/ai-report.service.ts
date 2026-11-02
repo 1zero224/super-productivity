@@ -76,6 +76,8 @@ export interface ParseReportOptions {
   maxCreateTasksPerGoal?: number;
   // create_goal (weekly review only): one short- and one mid-term goal at most
   isCreateGoalAllowed?: boolean;
+  // close_goal (weekly review only): mark a reached / abandoned goal
+  isCloseGoalAllowed?: boolean;
 }
 
 /** What each report type may create. */
@@ -83,7 +85,10 @@ export const REPORT_CREATE_LIMITS: Record<
   AiReportType,
   Pick<
     ParseReportOptions,
-    'maxCreateTasks' | 'maxCreateTasksPerGoal' | 'isCreateGoalAllowed'
+    | 'maxCreateTasks'
+    | 'maxCreateTasksPerGoal'
+    | 'isCreateGoalAllowed'
+    | 'isCloseGoalAllowed'
   >
 > = {
   daily: { maxCreateTasks: 0 },
@@ -93,6 +98,7 @@ export const REPORT_CREATE_LIMITS: Record<
     maxCreateTasks: MAX_SUGGESTIONS,
     maxCreateTasksPerGoal: MAX_CREATE_TASKS_PER_GOAL,
     isCreateGoalAllowed: true,
+    isCloseGoalAllowed: true,
   },
   classify: { maxCreateTasks: 0 },
 };
@@ -166,6 +172,7 @@ export const parseReportResponse = (
     maxCreateTasks = 0,
     maxCreateTasksPerGoal = MAX_CREATE_TASKS_PER_GOAL,
     isCreateGoalAllowed = false,
+    isCloseGoalAllowed = false,
   }: ParseReportOptions = {},
 ): ParsedReport => {
   const json = (extractJsonObject(text) || {}) as {
@@ -178,20 +185,36 @@ export const parseReportResponse = (
   const adjustment = str(json.adjustment, MAX_ADJUSTMENT_CHARS);
   const suggestions: AiSuggestion[] = [];
   const seen = new Set<string>();
+  const rawSuggestions: unknown[] = Array.isArray(json.suggestions)
+    ? json.suggestions
+    : [];
+  // Goals proposed for closing count as closed, so the review can fill the gap
+  // they leave with create_goal in the same pass
+  const closingIds = new Set(
+    isCloseGoalAllowed
+      ? rawSuggestions
+          .map((raw) => (raw || {}) as { tool?: unknown; args?: { id?: unknown } })
+          .filter((raw) => raw.tool === 'close_goal' && typeof raw.args?.id === 'string')
+          .map((raw) => raw.args!.id as string)
+      : [],
+  );
+  const goalsAfterClose = goals.map((g) =>
+    closingIds.has(g.id) && g.horizon !== 'long' ? { ...g, status: 'done' as const } : g,
+  );
   const activeShortGoals = new Map(
-    goals
+    goalsAfterClose
       .filter((g) => g.horizon === 'short' && g.status === 'active')
       .map((g) => [g.id, g]),
   );
   const openParents = {
-    mid: goalsWithoutChild(goals, 'mid'),
-    long: goalsWithoutChild(goals, 'long'),
+    mid: goalsWithoutChild(goalsAfterClose, 'mid'),
+    long: goalsWithoutChild(goalsAfterClose, 'long'),
   };
   const createdGoalHorizons = new Set<string>();
   const tasksPerGoal = new Map<string, number>();
   let createdTasks = 0;
 
-  for (const rawItem of Array.isArray(json.suggestions) ? json.suggestions : []) {
+  for (const rawItem of rawSuggestions) {
     if (suggestions.length >= MAX_SUGGESTIONS) break;
     const item = (rawItem || {}) as { tool?: unknown; args?: unknown; reason?: unknown };
     const tool = item.tool as AiSuggestionTool;
@@ -212,6 +235,31 @@ export const parseReportResponse = (
         tool,
         args,
         taskTitle: task.title,
+        reason,
+        state: 'open',
+      });
+      continue;
+    }
+
+    if (tool === 'close_goal') {
+      const goal = goals.find((g) => g.id === rawArgs.id);
+      const status = rawArgs.status === 'dropped' ? 'dropped' : 'done';
+      const key = `close_goal:${goal?.id}`;
+      if (
+        !isCloseGoalAllowed ||
+        !goal ||
+        goal.status !== 'active' ||
+        goal.horizon === 'long' ||
+        seen.has(key)
+      ) {
+        continue;
+      }
+      seen.add(key);
+      suggestions.push({
+        uid: nanoid(),
+        tool,
+        args: { id: goal.id, status },
+        taskTitle: goal.title,
         reason,
         state: 'open',
       });
@@ -644,6 +692,11 @@ export class AiReportService {
           projectIds: [],
           tagIds: [],
           status: 'active',
+        });
+        return;
+      case 'close_goal':
+        await this._goals.update(id, {
+          status: s.args.status === 'dropped' ? 'dropped' : 'done',
         });
         return;
     }
